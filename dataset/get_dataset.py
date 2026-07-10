@@ -2,7 +2,9 @@ from datasets import load_dataset, DatasetDict
 import pandas as pd
 import numpy as np
 import os
+from pathlib import Path
 
+NCHLT_DIR = Path(__file__).resolve().parent / "dsfsi-anv" / "nchlt"
 
 subset_dict = {
     "Afrikaans": "afr",
@@ -83,7 +85,7 @@ def extract_audio_meta_batched(batch):
 
 
 if __name__ == "__main__":        # ← required on Windows
-    
+
     for subset_name, lang_code in subset_dict.items():
         subset_data = load_dataset("dsfsi-anv/multilingual-nchlt-dataset", lang_code)
         # subset_data = DatasetDict({split: dataset.select(range(300)) for split, dataset in subset_data.items()})
@@ -111,7 +113,7 @@ if __name__ == "__main__":        # ← required on Windows
             dfs.append(df)
         
         all_dfs = pd.concat(dfs, ignore_index=True)
-        all_dfs.to_csv(f"dsfsi-anv/multilingual-nchlt-dataset_{lang_code}.csv", index=False)
+        all_dfs.to_csv(NCHLT_DIR / f"multilingual-nchlt-dataset_{lang_code}.csv", index=False)
         #df = ds_meta.to_pandas()
         #df.to_csv(f"dsfsi-anv/za-african-next-voices-compressed_{lang_code}.csv", index=False)
         print(f"{subset_name} Done: {len(all_dfs)} rows × {len(all_dfs.columns)} cols")
