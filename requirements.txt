@@ -5,9 +5,13 @@ numpy>=1.26.0
 soundfile>=0.12.1
 matplotlib>=3.8.0
 
+# Required by datasets>=4.x to decode audio columns
+torch
+torchcodec
+
 # Jupyter
 jupyter>=1.0.0
 ipykernel>=6.29.0
 
-# Add ASR (torch, transformers, jiwer, peft, accelerate) and classification
+# Add ASR (transformers, jiwer, peft, accelerate) and classification
 # (transformers, evaluate) dependencies here as those pipeline stages land.
