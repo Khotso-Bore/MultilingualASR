@@ -1,0 +1,19 @@
+# Python
+__pycache__/
+*.pyc
+.venv/
+venv/
+.ipynb_checkpoints/
+
+# Environment / secrets
+.env
+
+# OS
+.DS_Store
+
+# Regeneratable audio (raw downloads, VAD/resampled output)
+dataset/raw/
+dataset/processed/
+
+# Experiment outputs (logs, per-run metrics, plots)
+results/
