@@ -10,9 +10,11 @@ Output: dataset/processed/nchlt_ven/<split>.csv with columns
     transcript  normalised text
 
 These CSVs drop into notebooks/finetune_wav2vec2.ipynb in place of its
-streaming load (cell 10):
-    load_dataset("csv", data_files={...})
-    .cast_column("audio", Audio(sampling_rate=16000))
+streaming load (cell 10). With datasets >= 5, declare the Audio feature at
+load time (cast_column on a string column is not supported):
+    features = Features({"audio": Audio(sampling_rate=16000),
+                         "transcript": Value("string")})
+    load_dataset("csv", data_files={...}, features=features)
 
 Usage:
     python src/preprocess_nchlt.py                 # full run (~6.3 GB download)
