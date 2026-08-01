@@ -9,6 +9,9 @@ matplotlib>=3.8.0
 torch
 torchcodec
 
+# Audio preprocessing (VAD segmentation of long ANV clips)
+webrtcvad>=2.0.10
+
 # Jupyter
 jupyter>=1.0.0
 ipykernel>=6.29.0
