@@ -10,7 +10,9 @@ torch
 torchcodec
 
 # Audio preprocessing (VAD segmentation of long ANV clips)
+# webrtcvad still imports pkg_resources, which setuptools>=81 removed
 webrtcvad>=2.0.10
+setuptools<81
 
 # Jupyter
 jupyter>=1.0.0
