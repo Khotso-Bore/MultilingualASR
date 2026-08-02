@@ -14,9 +14,13 @@ torchcodec
 webrtcvad>=2.0.10
 setuptools<81
 
+# ASR evaluation (zero-shot baselines and beyond)
+transformers>=4.40.0
+jiwer>=3.0.0
+
 # Jupyter
 jupyter>=1.0.0
 ipykernel>=6.29.0
 
-# Add ASR (transformers, jiwer, peft, accelerate) and classification
-# (transformers, evaluate) dependencies here as those pipeline stages land.
+# Add remaining ASR (peft, accelerate) and classification (evaluate)
+# dependencies here as those pipeline stages land.
