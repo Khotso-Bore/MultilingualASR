@@ -51,7 +51,7 @@ def pick_device():
     return "cpu"
 
 
-def evaluate(model_name, limit, seed, n_examples):
+def evaluate(model_name, limit, seed, n_examples, save_predictions=None):
     device = pick_device()
     print(f"model: {model_name} | device: {device} | sample per corpus: {limit} | seed: {seed}")
 
@@ -84,6 +84,17 @@ def evaluate(model_name, limit, seed, n_examples):
         results[name] = {"wer": corpus_wer, "cer": corpus_cer, "n": len(sample),
                          "empty_preds": empty_preds, "seconds": elapsed}
 
+        if save_predictions:
+            out_path = Path(save_predictions)
+            out_path.mkdir(parents=True, exist_ok=True)
+            model_slug = model_name.split("/")[-1]
+            pred_file = out_path / f"{model_slug}_{name}.csv"
+            with open(pred_file, "w", newline="", encoding="utf-8") as f:
+                writer = csv.writer(f)
+                writer.writerow(["reference", "hypothesis"])
+                writer.writerows(zip(refs, hyps))
+            print(f"  predictions saved -> {pred_file}")
+
         print(f"\n== {name} ==")
         print(f"n={len(sample)}  WER={corpus_wer:.3f}  CER={corpus_cer:.3f}  "
               f"empty predictions={empty_preds}  ({elapsed:.0f}s)")
@@ -108,6 +119,10 @@ if __name__ == "__main__":
     parser.add_argument("--seed", type=int, default=42)
     parser.add_argument("--examples", type=int, default=3,
                         help="predicted-vs-reference pairs to print per corpus")
+    parser.add_argument("--save-predictions", default=None, metavar="DIR",
+                        help="persist all ref/hyp pairs to DIR/<model>_<corpus>.csv "
+                             "(feeds corrupt_transcripts.py --error-model)")
     args = parser.parse_args()
 
-    evaluate(args.model, args.limit, args.seed, args.examples)
+    evaluate(args.model, args.limit, args.seed, args.examples,
+             save_predictions=args.save_predictions)
