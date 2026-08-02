@@ -14,9 +14,10 @@ torchcodec
 webrtcvad>=2.0.10
 setuptools<81
 
-# ASR evaluation (zero-shot baselines and beyond)
+# ASR evaluation and fine-tuning
 transformers>=4.40.0
 jiwer>=3.0.0
+accelerate>=1.1.0
 
 # Jupyter
 jupyter>=1.0.0
