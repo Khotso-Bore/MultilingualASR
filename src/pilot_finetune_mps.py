@@ -70,6 +70,14 @@ def main(args):
 
     ds = ds.map(prepare, remove_columns=ds["train"].column_names)
 
+    if args.max_input_seconds:
+        max_len = int(args.max_input_seconds * 16000)
+        before = {k: len(v) for k, v in ds.items()}
+        ds = ds.filter(lambda x: x["input_length"] <= max_len)
+        print(f"clip-length cap {args.max_input_seconds}s: "
+              f"train {before['train']}->{len(ds['train'])}, "
+              f"eval {before['eval']}->{len(ds['eval'])}")
+
     from dataclasses import dataclass
     from typing import Dict, List, Union
 
@@ -116,6 +124,7 @@ def main(args):
         warmup_ratio=0.1,
         num_train_epochs=args.epochs,
         fp16=False,  # not supported on MPS
+        gradient_checkpointing=True,  # essential on 24GB unified memory
         max_grad_norm=1.0,
         push_to_hub=False,
         report_to=[],
@@ -149,7 +158,9 @@ if __name__ == "__main__":
     parser.add_argument("--train-clips", type=int, default=5000)
     parser.add_argument("--eval-clips", type=int, default=500)
     parser.add_argument("--epochs", type=int, default=3)
-    parser.add_argument("--batch-size", type=int, default=4)
-    parser.add_argument("--grad-accum", type=int, default=4)
+    parser.add_argument("--batch-size", type=int, default=2)
+    parser.add_argument("--grad-accum", type=int, default=8)
+    parser.add_argument("--max-input-seconds", type=float, default=10.0,
+                        help="drop clips longer than this (memory cap for MPS); 0 disables")
     args = parser.parse_args()
     main(args)
