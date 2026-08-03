@@ -46,13 +46,18 @@ def main(args):
     print(f"pilot fine-tune | device: {device} | train clips: {args.train_clips} | "
           f"eval clips: {args.eval_clips} | epochs: {args.epochs}")
 
+    train_files = [str(DATA / "nchlt_ven" / "train.csv")]
+    eval_files = [str(DATA / "nchlt_ven" / "validation.csv")]
+    if args.include_anv:
+        train_files.append(str(DATA / "anv_ven" / "train.csv"))
+        eval_files.append(str(DATA / "anv_ven" / "dev.csv"))
+
     features = Features({"audio": Audio(sampling_rate=16000), "transcript": Value("string")})
-    ds = load_dataset("csv", data_files={
-        "train": str(DATA / "nchlt_ven" / "train.csv"),
-        "eval": str(DATA / "nchlt_ven" / "validation.csv"),
-    }, features=features)
-    ds["train"] = ds["train"].shuffle(seed=42).select(range(args.train_clips))
-    ds["eval"] = ds["eval"].shuffle(seed=42).select(range(args.eval_clips))
+    ds = load_dataset("csv", data_files={"train": train_files, "eval": eval_files},
+                      features=features)
+    # shuffle before select so multi-file loads are mixed, not blockwise
+    ds["train"] = ds["train"].shuffle(seed=42).select(range(min(args.train_clips, len(ds["train"]))))
+    ds["eval"] = ds["eval"].shuffle(seed=42).select(range(min(args.eval_clips, len(ds["eval"]))))
 
     tokenizer = Wav2Vec2CTCTokenizer.from_pretrained(TOKENIZER_DIR)
     feature_extractor = Wav2Vec2FeatureExtractor(
@@ -101,26 +106,36 @@ def main(args):
         label_str = processor.batch_decode(pred.label_ids, group_tokens=False)
         return {"wer": wer(label_str, pred_str), "cer": cer(label_str, pred_str)}
 
-    model = Wav2Vec2ForCTC.from_pretrained(
-        "facebook/wav2vec2-xls-r-300m",
-        ctc_loss_reduction="mean", ctc_zero_infinity=True,
-        pad_token_id=processor.tokenizer.pad_token_id,
-        vocab_size=len(processor.tokenizer),
-        ignore_mismatched_sizes=True,
-    )
+    if args.resume_from:
+        # continue from an earlier pilot checkpoint - CTC head already sized to our vocab
+        model = Wav2Vec2ForCTC.from_pretrained(args.resume_from)
+        print(f"resumed weights from {args.resume_from}")
+    else:
+        model = Wav2Vec2ForCTC.from_pretrained(
+            "facebook/wav2vec2-xls-r-300m",
+            ctc_loss_reduction="mean", ctc_zero_infinity=True,
+            pad_token_id=processor.tokenizer.pad_token_id,
+            vocab_size=len(processor.tokenizer),
+            ignore_mismatched_sizes=True,
+        )
     model.freeze_feature_encoder()
     model = model.to(device)
 
+    out_dir = OUTPUT_DIR if not args.resume_from else OUTPUT_DIR.parent / (OUTPUT_DIR.name + "-v2")
+
     training_args = TrainingArguments(
-        output_dir=str(OUTPUT_DIR),
+        output_dir=str(out_dir),
         per_device_train_batch_size=args.batch_size,
         per_device_eval_batch_size=args.batch_size,
         gradient_accumulation_steps=args.grad_accum,
         eval_strategy="epoch",
         save_strategy="epoch",
-        save_total_limit=1,
+        save_total_limit=2,
+        load_best_model_at_end=True,
+        metric_for_best_model="wer",
+        greater_is_better=False,
         logging_steps=20,
-        learning_rate=1e-4,
+        learning_rate=args.learning_rate,
         warmup_ratio=0.1,
         num_train_epochs=args.epochs,
         fp16=False,  # not supported on MPS
@@ -132,6 +147,7 @@ def main(args):
         dataloader_num_workers=0,
     )
 
+    from transformers import EarlyStoppingCallback
     trainer = Trainer(
         model=model,
         data_collator=Collator(processor=processor),
@@ -140,6 +156,7 @@ def main(args):
         train_dataset=ds["train"],
         eval_dataset=ds["eval"],
         processing_class=processor.feature_extractor,
+        callbacks=[EarlyStoppingCallback(early_stopping_patience=2)],
     )
 
     trainer.train()
@@ -148,9 +165,9 @@ def main(args):
     print(f"eval WER: {final.get('eval_wer'):.3f} | eval CER: {final.get('eval_cer'):.3f}")
     print(f"(zero-shot Whisper Large v3 baseline on NCHLT test: WER 1.108, CER 0.763)")
 
-    trainer.save_model(str(OUTPUT_DIR / "final"))
-    processor.save_pretrained(str(OUTPUT_DIR / "final"))
-    print(f"model saved -> {OUTPUT_DIR / 'final'}")
+    trainer.save_model(str(out_dir / "final"))
+    processor.save_pretrained(str(out_dir / "final"))
+    print(f"model saved -> {out_dir / 'final'}")
 
 
 if __name__ == "__main__":
@@ -162,5 +179,10 @@ if __name__ == "__main__":
     parser.add_argument("--grad-accum", type=int, default=8)
     parser.add_argument("--max-input-seconds", type=float, default=10.0,
                         help="drop clips longer than this (memory cap for MPS); 0 disables")
+    parser.add_argument("--learning-rate", type=float, default=1e-4)
+    parser.add_argument("--resume-from", default=None,
+                        help="path to a previous pilot final dir to continue training from")
+    parser.add_argument("--include-anv", action="store_true",
+                        help="mix ANV train/dev CSVs into the data (still capped by max-input-seconds)")
     args = parser.parse_args()
     main(args)
