@@ -17,3 +17,5 @@ dataset/processed/
 
 # Experiment outputs (logs, per-run metrics, plots)
 results/
+
+khotso/wav2vec2*
