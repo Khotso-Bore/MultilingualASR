@@ -1,0 +1,1279 @@
+Whisper pilot fine-tune | model: openai/whisper-small | device: mps | train clips: 5000 | eval clips: 500 | epochs: 3
+
+Map:   0%|          | 0/5000 [00:00<?, ? examples/s]
+Map:   0%|          | 10/5000 [00:00<01:09, 71.34 examples/s]
+Map:   1%|          | 27/5000 [00:00<00:43, 115.55 examples/s]
+Map:   1%|          | 43/5000 [00:00<00:38, 127.12 examples/s]
+Map:   1%|          | 59/5000 [00:00<00:36, 136.81 examples/s]
+Map:   2%|▏         | 77/5000 [00:00<00:33, 146.13 examples/s]
+Map:   2%|▏         | 95/5000 [00:00<00:32, 152.99 examples/s]
+Map:   2%|▏         | 113/5000 [00:00<00:30, 160.66 examples/s]
+Map:   3%|▎         | 131/5000 [00:00<00:29, 165.15 examples/s]
+Map:   3%|▎         | 148/5000 [00:00<00:29, 163.00 examples/s]
+Map:   3%|▎         | 166/5000 [00:01<00:29, 163.69 examples/s]
+Map:   4%|▎         | 185/5000 [00:01<00:33, 145.01 examples/s]
+Map:   4%|▍         | 202/5000 [00:01<00:32, 148.39 examples/s]
+Map:   4%|▍         | 220/5000 [00:01<00:31, 154.04 examples/s]
+Map:   5%|▍         | 237/5000 [00:01<00:30, 156.69 examples/s]
+Map:   5%|▌         | 255/5000 [00:01<00:29, 160.09 examples/s]
+Map:   5%|▌         | 273/5000 [00:01<00:28, 163.94 examples/s]
+Map:   6%|▌         | 291/5000 [00:01<00:28, 166.02 examples/s]
+Map:   6%|▌         | 309/5000 [00:02<00:28, 167.43 examples/s]
+Map:   7%|▋         | 327/5000 [00:02<00:27, 167.79 examples/s]
+Map:   7%|▋         | 345/5000 [00:02<00:27, 167.77 examples/s]
+Map:   7%|▋         | 362/5000 [00:02<00:28, 164.10 examples/s]
+Map:   8%|▊         | 387/5000 [00:02<00:28, 161.10 examples/s]
+Map:   8%|▊         | 405/5000 [00:02<00:28, 162.61 examples/s]
+Map:   8%|▊         | 423/5000 [00:02<00:27, 163.64 examples/s]
+Map:   9%|▉         | 441/5000 [00:02<00:27, 164.65 examples/s]
+Map:   9%|▉         | 459/5000 [00:02<00:27, 165.67 examples/s]
+Map:  10%|▉         | 477/5000 [00:03<00:27, 166.60 examples/s]
+Map:  10%|█         | 500/5000 [00:03<00:28, 159.66 examples/s]
+Map:  10%|█         | 525/5000 [00:03<00:28, 159.52 examples/s]
+Map:  11%|█         | 543/5000 [00:03<00:27, 162.52 examples/s]
+Map:  11%|█         | 561/5000 [00:03<00:27, 163.47 examples/s]
+Map:  12%|█▏        | 586/5000 [00:03<00:27, 162.87 examples/s]
+Map:  12%|█▏        | 604/5000 [00:03<00:26, 164.56 examples/s]
+Map:  12%|█▏        | 622/5000 [00:03<00:26, 166.11 examples/s]
+Map:  13%|█▎        | 640/5000 [00:04<00:26, 167.28 examples/s]
+Map:  13%|█▎        | 657/5000 [00:04<00:26, 165.75 examples/s]
+Map:  14%|█▎        | 675/5000 [00:04<00:25, 167.61 examples/s]
+Map:  14%|█▍        | 693/5000 [00:04<00:25, 169.98 examples/s]
+Map:  14%|█▍        | 711/5000 [00:04<00:25, 170.29 examples/s]
+Map:  15%|█▍        | 729/5000 [00:04<00:25, 169.39 examples/s]
+Map:  15%|█▍        | 747/5000 [00:04<00:25, 168.08 examples/s]
+Map:  15%|█▌        | 764/5000 [00:04<00:25, 166.00 examples/s]
+Map:  16%|█▌        | 781/5000 [00:04<00:25, 164.76 examples/s]
+Map:  16%|█▌        | 805/5000 [00:05<00:26, 161.22 examples/s]
+Map:  16%|█▋        | 823/5000 [00:05<00:25, 161.84 examples/s]
+Map:  17%|█▋        | 840/5000 [00:05<00:25, 161.27 examples/s]
+Map:  17%|█▋        | 857/5000 [00:05<00:25, 159.69 examples/s]
+Map:  17%|█▋        | 874/5000 [00:05<00:25, 160.65 examples/s]
+Map:  18%|█▊        | 892/5000 [00:05<00:25, 162.46 examples/s]
+Map:  18%|█▊        | 910/5000 [00:05<00:24, 163.90 examples/s]
+Map:  19%|█▊        | 928/5000 [00:05<00:24, 167.18 examples/s]
+Map:  19%|█▉        | 946/5000 [00:05<00:24, 168.32 examples/s]
+Map:  19%|█▉        | 964/5000 [00:05<00:23, 169.75 examples/s]
+Map:  20%|█▉        | 982/5000 [00:06<00:23, 171.70 examples/s]
+Map:  20%|██        | 1000/5000 [00:06<00:47, 84.55 examples/s]
+Map:  20%|██        | 1019/5000 [00:06<00:42, 92.71 examples/s]
+Map:  21%|██        | 1036/5000 [00:06<00:37, 105.95 examples/s]
+Map:  21%|██        | 1054/5000 [00:06<00:32, 119.73 examples/s]
+Map:  21%|██▏       | 1072/5000 [00:07<00:29, 132.21 examples/s]
+Map:  22%|██▏       | 1090/5000 [00:07<00:27, 143.07 examples/s]
+Map:  22%|██▏       | 1110/5000 [00:07<00:25, 153.61 examples/s]
+Map:  23%|██▎       | 1128/5000 [00:07<00:24, 159.51 examples/s]
+Map:  23%|██▎       | 1146/5000 [00:07<00:23, 162.96 examples/s]
+Map:  23%|██▎       | 1172/5000 [00:07<00:23, 164.38 examples/s]
+Map:  24%|██▍       | 1190/5000 [00:07<00:23, 165.38 examples/s]
+Map:  24%|██▍       | 1208/5000 [00:07<00:22, 168.59 examples/s]
+Map:  25%|██▍       | 1226/5000 [00:07<00:22, 170.22 examples/s]
+Map:  25%|██▍       | 1244/5000 [00:08<00:21, 171.36 examples/s]
+Map:  25%|██▌       | 1262/5000 [00:08<00:21, 172.81 examples/s]
+Map:  26%|██▌       | 1280/5000 [00:08<00:21, 172.55 examples/s]
+Map:  26%|██▌       | 1299/5000 [00:08<00:21, 174.63 examples/s]
+Map:  26%|██▋       | 1323/5000 [00:08<00:22, 164.54 examples/s]
+Map:  27%|██▋       | 1340/5000 [00:08<00:22, 161.16 examples/s]
+Map:  27%|██▋       | 1358/5000 [00:08<00:22, 163.96 examples/s]
+Map:  28%|██▊       | 1376/5000 [00:08<00:21, 166.72 examples/s]
+Map:  28%|██▊       | 1394/5000 [00:08<00:21, 168.58 examples/s]
+Map:  28%|██▊       | 1412/5000 [00:09<00:21, 170.50 examples/s]
+Map:  29%|██▊       | 1430/5000 [00:09<00:20, 172.24 examples/s]
+Map:  29%|██▉       | 1448/5000 [00:09<00:20, 172.20 examples/s]
+Map:  29%|██▉       | 1466/5000 [00:09<00:20, 169.55 examples/s]
+Map:  30%|██▉       | 1484/5000 [00:09<00:20, 168.43 examples/s]
+Map:  30%|███       | 1502/5000 [00:09<00:20, 167.57 examples/s]
+Map:  30%|███       | 1520/5000 [00:09<00:20, 169.91 examples/s]
+Map:  31%|███       | 1538/5000 [00:09<00:20, 169.33 examples/s]
+Map:  31%|███       | 1555/5000 [00:09<00:20, 166.27 examples/s]
+Map:  31%|███▏      | 1573/5000 [00:09<00:20, 167.42 examples/s]
+Map:  32%|███▏      | 1591/5000 [00:10<00:20, 168.94 examples/s]
+Map:  32%|███▏      | 1609/5000 [00:10<00:20, 168.78 examples/s]
+Map:  33%|███▎      | 1626/5000 [00:10<00:20, 165.31 examples/s]
+Map:  33%|███▎      | 1644/5000 [00:10<00:20, 167.72 examples/s]
+Map:  33%|███▎      | 1662/5000 [00:10<00:19, 169.36 examples/s]
+Map:  34%|███▎      | 1680/5000 [00:10<00:19, 170.73 examples/s]
+Map:  34%|███▍      | 1699/5000 [00:10<00:19, 172.49 examples/s]
+Map:  34%|███▍      | 1718/5000 [00:10<00:18, 174.54 examples/s]
+Map:  35%|███▍      | 1737/5000 [00:10<00:18, 175.59 examples/s]
+Map:  35%|███▌      | 1756/5000 [00:11<00:18, 176.69 examples/s]
+Map:  35%|███▌      | 1774/5000 [00:11<00:18, 176.20 examples/s]
+Map:  36%|███▌      | 1792/5000 [00:11<00:18, 175.62 examples/s]
+Map:  36%|███▌      | 1811/5000 [00:11<00:18, 176.91 examples/s]
+Map:  37%|███▋      | 1829/5000 [00:11<00:17, 176.35 examples/s]
+Map:  37%|███▋      | 1847/5000 [00:11<00:17, 177.07 examples/s]
+Map:  37%|███▋      | 1865/5000 [00:11<00:17, 175.74 examples/s]
+Map:  38%|███▊      | 1883/5000 [00:11<00:17, 174.07 examples/s]
+Map:  38%|███▊      | 1901/5000 [00:11<00:17, 174.40 examples/s]
+Map:  38%|███▊      | 1919/5000 [00:11<00:17, 175.06 examples/s]
+Map:  39%|███▊      | 1937/5000 [00:12<00:17, 175.14 examples/s]
+Map:  39%|███▉      | 1955/5000 [00:12<00:17, 175.26 examples/s]
+Map:  39%|███▉      | 1974/5000 [00:12<00:17, 175.91 examples/s]
+Map:  40%|███▉      | 1992/5000 [00:12<00:17, 173.93 examples/s]
+Map:  40%|████      | 2013/5000 [00:12<00:32, 92.10 examples/s] 
+Map:  41%|████      | 2035/5000 [00:12<00:28, 103.46 examples/s]
+Map:  41%|████      | 2053/5000 [00:13<00:25, 116.75 examples/s]
+Map:  41%|████▏     | 2071/5000 [00:13<00:22, 128.60 examples/s]
+Map:  42%|████▏     | 2088/5000 [00:13<00:21, 136.81 examples/s]
+Map:  42%|████▏     | 2104/5000 [00:13<00:20, 141.76 examples/s]
+Map:  42%|████▏     | 2121/5000 [00:13<00:19, 147.15 examples/s]
+Map:  43%|████▎     | 2139/5000 [00:13<00:18, 153.02 examples/s]
+Map:  43%|████▎     | 2158/5000 [00:13<00:17, 159.36 examples/s]
+Map:  44%|████▎     | 2176/5000 [00:13<00:17, 164.37 examples/s]
+Map:  44%|████▍     | 2194/5000 [00:13<00:16, 167.67 examples/s]
+Map:  44%|████▍     | 2212/5000 [00:14<00:16, 170.17 examples/s]
+Map:  45%|████▍     | 2238/5000 [00:14<00:16, 167.46 examples/s]
+Map:  45%|████▌     | 2256/5000 [00:14<00:16, 167.12 examples/s]
+Map:  45%|████▌     | 2274/5000 [00:14<00:16, 167.79 examples/s]
+Map:  46%|████▌     | 2292/5000 [00:14<00:15, 169.78 examples/s]
+Map:  46%|████▌     | 2310/5000 [00:14<00:15, 170.98 examples/s]
+Map:  47%|████▋     | 2328/5000 [00:14<00:15, 172.11 examples/s]
+Map:  47%|████▋     | 2351/5000 [00:14<00:16, 160.44 examples/s]
+Map:  48%|████▊     | 2375/5000 [00:15<00:16, 157.23 examples/s]
+Map:  48%|████▊     | 2393/5000 [00:15<00:16, 159.84 examples/s]
+Map:  48%|████▊     | 2411/5000 [00:15<00:15, 164.33 examples/s]
+Map:  49%|████▊     | 2428/5000 [00:15<00:15, 162.92 examples/s]
+Map:  49%|████▉     | 2453/5000 [00:15<00:15, 160.54 examples/s]
+Map:  49%|████▉     | 2471/5000 [00:15<00:15, 163.39 examples/s]
+Map:  50%|████▉     | 2489/5000 [00:15<00:15, 166.31 examples/s]
+Map:  50%|█████     | 2507/5000 [00:15<00:14, 169.20 examples/s]
+Map:  50%|█████     | 2525/5000 [00:15<00:14, 171.33 examples/s]
+Map:  51%|█████     | 2543/5000 [00:16<00:14, 171.16 examples/s]
+Map:  51%|█████     | 2561/5000 [00:16<00:14, 172.73 examples/s]
+Map:  52%|█████▏    | 2579/5000 [00:16<00:13, 173.73 examples/s]
+Map:  52%|█████▏    | 2604/5000 [00:16<00:14, 169.01 examples/s]
+Map:  53%|█████▎    | 2628/5000 [00:16<00:14, 162.43 examples/s]
+Map:  53%|█████▎    | 2646/5000 [00:16<00:14, 163.56 examples/s]
+Map:  53%|█████▎    | 2665/5000 [00:16<00:13, 167.66 examples/s]
+Map:  54%|█████▎    | 2683/5000 [00:16<00:13, 168.89 examples/s]
+Map:  54%|█████▍    | 2701/5000 [00:16<00:13, 168.43 examples/s]
+Map:  55%|█████▍    | 2725/5000 [00:17<00:14, 162.41 examples/s]
+Map:  55%|█████▍    | 2742/5000 [00:17<00:13, 162.16 examples/s]
+Map:  55%|█████▌    | 2760/5000 [00:17<00:13, 165.69 examples/s]
+Map:  56%|█████▌    | 2777/5000 [00:17<00:13, 165.20 examples/s]
+Map:  56%|█████▌    | 2800/5000 [00:17<00:14, 156.98 examples/s]
+Map:  56%|█████▋    | 2816/5000 [00:17<00:14, 154.24 examples/s]
+Map:  57%|█████▋    | 2834/5000 [00:17<00:13, 157.00 examples/s]
+Map:  57%|█████▋    | 2850/5000 [00:17<00:13, 154.48 examples/s]
+Map:  57%|█████▋    | 2869/5000 [00:18<00:15, 141.19 examples/s]
+Map:  58%|█████▊    | 2890/5000 [00:18<00:17, 120.93 examples/s]
+Map:  58%|█████▊    | 2904/5000 [00:18<00:16, 124.31 examples/s]
+Map:  58%|█████▊    | 2920/5000 [00:18<00:15, 132.14 examples/s]
+Map:  59%|█████▊    | 2937/5000 [00:18<00:14, 139.36 examples/s]
+Map:  59%|█████▉    | 2955/5000 [00:18<00:13, 147.97 examples/s]
+Map:  59%|█████▉    | 2973/5000 [00:18<00:13, 155.30 examples/s]
+Map:  60%|█████▉    | 2991/5000 [00:18<00:12, 159.63 examples/s]
+Map:  60%|██████    | 3011/5000 [00:19<00:22, 86.52 examples/s] 
+Map:  60%|██████    | 3025/5000 [00:19<00:21, 93.26 examples/s]
+Map:  61%|██████    | 3043/5000 [00:19<00:18, 107.67 examples/s]
+Map:  61%|██████    | 3061/5000 [00:19<00:16, 121.14 examples/s]
+Map:  62%|██████▏   | 3077/5000 [00:19<00:14, 128.55 examples/s]
+Map:  62%|██████▏   | 3095/5000 [00:19<00:13, 137.90 examples/s]
+Map:  62%|██████▏   | 3113/5000 [00:20<00:12, 146.72 examples/s]
+Map:  63%|██████▎   | 3130/5000 [00:20<00:12, 149.92 examples/s]
+Map:  63%|██████▎   | 3148/5000 [00:20<00:11, 156.34 examples/s]
+Map:  63%|██████▎   | 3166/5000 [00:20<00:11, 160.52 examples/s]
+Map:  64%|██████▎   | 3184/5000 [00:20<00:11, 163.03 examples/s]
+Map:  64%|██████▍   | 3202/5000 [00:20<00:10, 163.92 examples/s]
+Map:  64%|██████▍   | 3219/5000 [00:20<00:10, 163.04 examples/s]
+Map:  65%|██████▍   | 3237/5000 [00:20<00:10, 166.13 examples/s]
+Map:  65%|██████▌   | 3255/5000 [00:20<00:10, 168.81 examples/s]
+Map:  65%|██████▌   | 3273/5000 [00:20<00:10, 170.76 examples/s]
+Map:  66%|██████▌   | 3291/5000 [00:21<00:10, 168.71 examples/s]
+Map:  66%|██████▌   | 3308/5000 [00:21<00:10, 164.55 examples/s]
+Map:  67%|██████▋   | 3331/5000 [00:21<00:10, 155.41 examples/s]
+Map:  67%|██████▋   | 3347/5000 [00:21<00:10, 154.12 examples/s]
+Map:  67%|██████▋   | 3364/5000 [00:21<00:10, 156.23 examples/s]
+Map:  68%|██████▊   | 3381/5000 [00:21<00:10, 158.37 examples/s]
+Map:  68%|██████▊   | 3398/5000 [00:21<00:09, 160.87 examples/s]
+Map:  68%|██████▊   | 3416/5000 [00:21<00:09, 164.18 examples/s]
+Map:  69%|██████▊   | 3434/5000 [00:21<00:09, 167.06 examples/s]
+Map:  69%|██████▉   | 3452/5000 [00:22<00:09, 167.96 examples/s]
+Map:  69%|██████▉   | 3470/5000 [00:22<00:09, 169.41 examples/s]
+Map:  70%|██████▉   | 3488/5000 [00:22<00:08, 170.54 examples/s]
+Map:  70%|███████   | 3506/5000 [00:22<00:08, 171.14 examples/s]
+Map:  70%|███████   | 3524/5000 [00:22<00:08, 171.12 examples/s]
+Map:  71%|███████   | 3542/5000 [00:22<00:08, 169.14 examples/s]
+Map:  71%|███████   | 3560/5000 [00:22<00:08, 167.99 examples/s]
+Map:  72%|███████▏  | 3578/5000 [00:22<00:08, 167.51 examples/s]
+Map:  72%|███████▏  | 3596/5000 [00:22<00:08, 169.40 examples/s]
+Map:  72%|███████▏  | 3614/5000 [00:23<00:08, 168.58 examples/s]
+Map:  73%|███████▎  | 3632/5000 [00:23<00:08, 168.88 examples/s]
+Map:  73%|███████▎  | 3650/5000 [00:23<00:07, 169.09 examples/s]
+Map:  73%|███████▎  | 3668/5000 [00:23<00:07, 168.66 examples/s]
+Map:  74%|███████▎  | 3685/5000 [00:23<00:07, 167.47 examples/s]
+Map:  74%|███████▍  | 3702/5000 [00:23<00:07, 165.73 examples/s]
+Map:  74%|███████▍  | 3720/5000 [00:23<00:07, 166.12 examples/s]
+Map:  75%|███████▍  | 3739/5000 [00:23<00:07, 169.42 examples/s]
+Map:  75%|███████▌  | 3757/5000 [00:23<00:07, 170.78 examples/s]
+Map:  76%|███████▌  | 3775/5000 [00:23<00:07, 171.12 examples/s]
+Map:  76%|███████▌  | 3793/5000 [00:24<00:07, 172.28 examples/s]
+Map:  76%|███████▌  | 3811/5000 [00:24<00:06, 169.97 examples/s]
+Map:  77%|███████▋  | 3829/5000 [00:24<00:06, 170.82 examples/s]
+Map:  77%|███████▋  | 3847/5000 [00:24<00:06, 169.11 examples/s]
+Map:  77%|███████▋  | 3865/5000 [00:24<00:06, 170.56 examples/s]
+Map:  78%|███████▊  | 3891/5000 [00:24<00:06, 168.13 examples/s]
+Map:  78%|███████▊  | 3908/5000 [00:24<00:06, 166.61 examples/s]
+Map:  79%|███████▊  | 3933/5000 [00:24<00:06, 163.02 examples/s]
+Map:  79%|███████▉  | 3951/5000 [00:25<00:06, 164.62 examples/s]
+Map:  79%|███████▉  | 3969/5000 [00:25<00:06, 165.15 examples/s]
+Map:  80%|███████▉  | 3987/5000 [00:25<00:06, 166.16 examples/s]
+Map:  80%|████████  | 4007/5000 [00:25<00:10, 91.48 examples/s] 
+Map:  80%|████████  | 4021/5000 [00:25<00:10, 97.32 examples/s]
+Map:  81%|████████  | 4038/5000 [00:25<00:08, 109.44 examples/s]
+Map:  81%|████████  | 4056/5000 [00:26<00:07, 122.50 examples/s]
+Map:  81%|████████▏ | 4074/5000 [00:26<00:06, 133.08 examples/s]
+Map:  82%|████████▏ | 4092/5000 [00:26<00:06, 142.50 examples/s]
+Map:  82%|████████▏ | 4110/5000 [00:26<00:05, 149.30 examples/s]
+Map:  83%|████████▎ | 4128/5000 [00:26<00:05, 154.19 examples/s]
+Map:  83%|████████▎ | 4146/5000 [00:26<00:05, 157.29 examples/s]
+Map:  83%|████████▎ | 4164/5000 [00:26<00:05, 160.41 examples/s]
+Map:  84%|████████▎ | 4182/5000 [00:26<00:05, 163.39 examples/s]
+Map:  84%|████████▍ | 4200/5000 [00:26<00:04, 165.74 examples/s]
+Map:  84%|████████▍ | 4218/5000 [00:26<00:04, 167.04 examples/s]
+Map:  85%|████████▍ | 4236/5000 [00:27<00:04, 167.94 examples/s]
+Map:  85%|████████▌ | 4254/5000 [00:27<00:04, 168.02 examples/s]
+Map:  86%|████████▌ | 4279/5000 [00:27<00:04, 165.13 examples/s]
+Map:  86%|████████▌ | 4297/5000 [00:27<00:04, 167.05 examples/s]
+Map:  86%|████████▋ | 4315/5000 [00:27<00:04, 169.00 examples/s]
+Map:  87%|████████▋ | 4333/5000 [00:27<00:03, 170.73 examples/s]
+Map:  87%|████████▋ | 4351/5000 [00:27<00:03, 171.68 examples/s]
+Map:  87%|████████▋ | 4369/5000 [00:27<00:03, 172.89 examples/s]
+Map:  88%|████████▊ | 4387/5000 [00:27<00:03, 171.70 examples/s]
+Map:  88%|████████▊ | 4405/5000 [00:28<00:03, 172.87 examples/s]
+Map:  88%|████████▊ | 4423/5000 [00:28<00:03, 173.28 examples/s]
+Map:  89%|████████▉ | 4441/5000 [00:28<00:03, 172.95 examples/s]
+Map:  89%|████████▉ | 4459/5000 [00:28<00:03, 173.32 examples/s]
+Map:  90%|████████▉ | 4477/5000 [00:28<00:02, 174.36 examples/s]
+Map:  90%|████████▉ | 4495/5000 [00:28<00:02, 174.84 examples/s]
+Map:  90%|█████████ | 4513/5000 [00:28<00:02, 175.55 examples/s]
+Map:  91%|█████████ | 4532/5000 [00:28<00:02, 177.56 examples/s]
+Map:  91%|█████████ | 4550/5000 [00:28<00:02, 177.01 examples/s]
+Map:  91%|█████████▏| 4569/5000 [00:29<00:02, 176.46 examples/s]
+Map:  92%|█████████▏| 4587/5000 [00:29<00:02, 176.69 examples/s]
+Map:  92%|█████████▏| 4605/5000 [00:29<00:02, 176.10 examples/s]
+Map:  92%|█████████▏| 4623/5000 [00:29<00:02, 175.34 examples/s]
+Map:  93%|█████████▎| 4641/5000 [00:29<00:02, 174.87 examples/s]
+Map:  93%|█████████▎| 4659/5000 [00:29<00:01, 174.61 examples/s]
+Map:  94%|█████████▎| 4677/5000 [00:29<00:01, 174.66 examples/s]
+Map:  94%|█████████▍| 4695/5000 [00:29<00:01, 174.38 examples/s]
+Map:  94%|█████████▍| 4720/5000 [00:29<00:01, 166.70 examples/s]
+Map:  95%|█████████▍| 4738/5000 [00:30<00:01, 167.38 examples/s]
+Map:  95%|█████████▌| 4756/5000 [00:30<00:01, 169.08 examples/s]
+Map:  95%|█████████▌| 4774/5000 [00:30<00:01, 170.01 examples/s]
+Map:  96%|█████████▌| 4792/5000 [00:30<00:01, 171.36 examples/s]
+Map:  96%|█████████▌| 4810/5000 [00:30<00:01, 172.22 examples/s]
+Map:  97%|█████████▋| 4828/5000 [00:30<00:00, 173.02 examples/s]
+Map:  97%|█████████▋| 4846/5000 [00:30<00:00, 173.44 examples/s]
+Map:  97%|█████████▋| 4864/5000 [00:30<00:00, 173.90 examples/s]
+Map:  98%|█████████▊| 4882/5000 [00:30<00:00, 174.81 examples/s]
+Map:  98%|█████████▊| 4900/5000 [00:30<00:00, 174.00 examples/s]
+Map:  98%|█████████▊| 4919/5000 [00:31<00:00, 175.60 examples/s]
+Map:  99%|█████████▊| 4937/5000 [00:31<00:00, 175.83 examples/s]
+Map:  99%|█████████▉| 4955/5000 [00:31<00:00, 175.87 examples/s]
+Map:  99%|█████████▉| 4973/5000 [00:31<00:00, 175.90 examples/s]
+Map: 100%|█████████▉| 4991/5000 [00:31<00:00, 176.37 examples/s]
+Map: 100%|██████████| 5000/5000 [00:34<00:00, 145.16 examples/s]
+
+Map:   0%|          | 0/500 [00:00<?, ? examples/s]
+Map:   4%|▎         | 18/500 [00:00<00:02, 162.68 examples/s]
+Map:   7%|▋         | 35/500 [00:00<00:02, 158.95 examples/s]
+Map:  11%|█         | 53/500 [00:00<00:02, 164.30 examples/s]
+Map:  14%|█▍        | 71/500 [00:00<00:02, 168.51 examples/s]
+Map:  18%|█▊        | 89/500 [00:00<00:02, 169.35 examples/s]
+Map:  22%|██▏       | 112/500 [00:00<00:02, 130.83 examples/s]
+Map:  26%|██▌       | 129/500 [00:00<00:02, 138.62 examples/s]
+Map:  29%|██▉       | 147/500 [00:00<00:02, 146.17 examples/s]
+Map:  33%|███▎      | 166/500 [00:01<00:02, 154.84 examples/s]
+Map:  37%|███▋      | 184/500 [00:01<00:01, 159.26 examples/s]
+Map:  40%|████      | 202/500 [00:01<00:01, 162.10 examples/s]
+Map:  44%|████▍     | 220/500 [00:01<00:01, 164.67 examples/s]
+Map:  48%|████▊     | 238/500 [00:01<00:01, 165.63 examples/s]
+Map:  51%|█████     | 256/500 [00:01<00:01, 166.87 examples/s]
+Map:  55%|█████▍    | 273/500 [00:01<00:01, 164.85 examples/s]
+Map:  58%|█████▊    | 291/500 [00:01<00:01, 165.48 examples/s]
+Map:  62%|██████▏   | 309/500 [00:01<00:01, 166.25 examples/s]
+Map:  65%|██████▌   | 327/500 [00:02<00:01, 168.76 examples/s]
+Map:  69%|██████▉   | 345/500 [00:02<00:00, 170.92 examples/s]
+Map:  73%|███████▎  | 363/500 [00:02<00:00, 170.46 examples/s]
+Map:  76%|███████▌  | 381/500 [00:02<00:00, 171.08 examples/s]
+Map:  80%|███████▉  | 399/500 [00:02<00:00, 172.68 examples/s]
+Map:  83%|████████▎ | 417/500 [00:02<00:00, 172.95 examples/s]
+Map:  87%|████████▋ | 435/500 [00:02<00:00, 172.97 examples/s]
+Map:  91%|█████████ | 453/500 [00:02<00:00, 172.72 examples/s]
+Map:  94%|█████████▍| 471/500 [00:02<00:00, 173.70 examples/s]
+Map:  98%|█████████▊| 489/500 [00:02<00:00, 172.36 examples/s]
+Map: 100%|██████████| 500/500 [00:03<00:00, 152.29 examples/s]
+
+Filter:   0%|          | 0/5000 [00:00<?, ? examples/s]
+Filter:  20%|██        | 1000/5000 [00:41<02:44, 24.31 examples/s]
+Filter:  20%|██        | 1000/5000 [01:17<02:44, 24.31 examples/s]
+Filter:  40%|████      | 2000/5000 [01:19<01:57, 25.49 examples/s]
+Filter:  40%|████      | 2000/5000 [01:53<01:57, 25.49 examples/s]
+Filter:  60%|██████    | 3000/5000 [01:54<01:15, 26.54 examples/s]
+Filter:  60%|██████    | 3000/5000 [02:30<01:15, 26.54 examples/s]
+Filter:  80%|████████  | 4000/5000 [02:32<00:37, 26.59 examples/s]
+Filter:  80%|████████  | 4000/5000 [03:09<00:37, 26.59 examples/s]
+Filter: 100%|██████████| 5000/5000 [03:11<00:00, 26.32 examples/s]
+Filter: 100%|██████████| 5000/5000 [03:11<00:00, 26.17 examples/s]
+
+Filter:   0%|          | 0/500 [00:00<?, ? examples/s]
+Filter: 100%|██████████| 500/500 [00:16<00:00, 30.49 examples/s]
+Filter: 100%|██████████| 500/500 [00:16<00:00, 30.49 examples/s]
+clip-length cap 10.0s: train 5000->4974, eval 500->493
+
+Loading weights:   0%|          | 0/479 [00:00<?, ?it/s]
+Loading weights: 100%|██████████| 479/479 [00:00<00:00, 9189.07it/s]
+[transformers] warmup_ratio is deprecated and will be removed in v5.2. Use `warmup_steps` instead.
+
+  super().__init__(loader)
+
+                                                  
+
+                                                  
+
+                                                  
+
+                                                  
+
+                                                   
+
+                                                   
+
+                                                   
+
+                                                   
+
+                                                   
+
+                                                     
+
+                                                     
+
+                                                     
+
+                                                     
+
+                                                     
+
+                                                     
+
+[transformers] A custom logits processor of type <class 'transformers.generation.logits_process.SuppressTokensLogitsProcessor'> has been passed to `.generate()`, but it was also created in `.generate()`, given its parameterization. The custom <class 'transformers.generation.logits_process.SuppressTokensLogitsProcessor'> will take precedence. Please check the docstring of <class 'transformers.generation.logits_process.SuppressTokensLogitsProcessor'> to see related `.generate()` flags.
+[transformers] A custom logits processor of type <class 'transformers.generation.logits_process.SuppressTokensAtBeginLogitsProcessor'> has been passed to `.generate()`, but it was also created in `.generate()`, given its parameterization. The custom <class 'transformers.generation.logits_process.SuppressTokensAtBeginLogitsProcessor'> will take precedence. Please check the docstring of <class 'transformers.generation.logits_process.SuppressTokensAtBeginLogitsProcessor'> to see related `.generate()` flags.
+{'loss': '48.07', 'grad_norm': '425.7', 'learning_rate': '2.021e-06', 'epoch': '0.06433'}
+{'loss': '25.74', 'grad_norm': '188.3', 'learning_rate': '4.149e-06', 'epoch': '0.1287'}
+{'loss': '16.27', 'grad_norm': '154.4', 'learning_rate': '6.277e-06', 'epoch': '0.193'}
+{'loss': '12.63', 'grad_norm': '145.4', 'learning_rate': '8.404e-06', 'epoch': '0.2573'}
+{'loss': '10.76', 'grad_norm': '131.4', 'learning_rate': '9.94e-06', 'epoch': '0.3217'}
+{'loss': '8.623', 'grad_norm': '122.3', 'learning_rate': '9.702e-06', 'epoch': '0.386'}
+{'loss': '6.821', 'grad_norm': '119.4', 'learning_rate': '9.464e-06', 'epoch': '0.4503'}
+{'loss': '5.395', 'grad_norm': '104', 'learning_rate': '9.225e-06', 'epoch': '0.5147'}
+{'loss': '4.114', 'grad_norm': '89.39', 'learning_rate': '8.987e-06', 'epoch': '0.579'}
+{'loss': '4.011', 'grad_norm': '81.73', 'learning_rate': '8.749e-06', 'epoch': '0.6433'}
+{'loss': '3.352', 'grad_norm': '80.98', 'learning_rate': '8.51e-06', 'epoch': '0.7077'}
+{'loss': '3.736', 'grad_norm': '86.92', 'learning_rate': '8.272e-06', 'epoch': '0.772'}
+{'loss': '3.105', 'grad_norm': '48.39', 'learning_rate': '8.033e-06', 'epoch': '0.8363'}
+{'loss': '3.414', 'grad_norm': '68.49', 'learning_rate': '7.795e-06', 'epoch': '0.9007'}
+{'loss': '3.211', 'grad_norm': '62.75', 'learning_rate': '7.557e-06', 'epoch': '0.965'}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+                                                     
+
+
+                                                 
+[A
+
+
+                                                 [A{'eval_loss': '0.3541', 'eval_wer': '0.4282', 'eval_cer': '0.1097', 'eval_runtime': '401.6', 'eval_samples_per_second': '1.228', 'eval_steps_per_second': '0.615', 'epoch': '1'}
+
+
+Writing model shards:   0%|          | 0/1 [00:00<?, ?it/s][A
+
+Writing model shards: 100%|██████████| 1/1 [00:02<00:00,  2.05s/it][A
+Writing model shards: 100%|██████████| 1/1 [00:02<00:00,  2.05s/it]
+/Users/mulisamusehane/Documents/GitHub/MultilingualASR/.venv/lib/python3.12/site-packages/torch/utils/data/dataloader.py:759: UserWarning: 'pin_memory' argument is set as true but not supported on MPS now, device pinned memory won't be used.
+  super().__init__(loader)
+
+                                                     
+
+                                                     
+
+                                                     
+
+                                                     
+
+                                                     
+
+                                                     
+
+                                                     
+
+                                                     
+
+                                                     
+
+                                                     
+
+                                                     
+
+                                                     
+
+                                                     
+
+                                                     
+
+                                                     
+
+                                                     
+
+{'loss': '2.033', 'grad_norm': '53.49', 'learning_rate': '7.08e-06', 'epoch': '1.093'}
+{'loss': '1.963', 'grad_norm': '99.29', 'learning_rate': '6.841e-06', 'epoch': '1.158'}
+{'loss': '1.804', 'grad_norm': '49.85', 'learning_rate': '6.603e-06', 'epoch': '1.222'}
+{'loss': '1.894', 'grad_norm': '70.45', 'learning_rate': '6.365e-06', 'epoch': '1.286'}
+{'loss': '1.986', 'grad_norm': '55.99', 'learning_rate': '6.126e-06', 'epoch': '1.351'}
+{'loss': '1.65', 'grad_norm': '50.01', 'learning_rate': '5.888e-06', 'epoch': '1.415'}
+{'loss': '1.784', 'grad_norm': '56.46', 'learning_rate': '5.65e-06', 'epoch': '1.479'}
+{'loss': '1.782', 'grad_norm': '40.77', 'learning_rate': '5.411e-06', 'epoch': '1.544'}
+{'loss': '1.752', 'grad_norm': '59.94', 'learning_rate': '5.173e-06', 'epoch': '1.608'}
+{'loss': '1.639', 'grad_norm': '54.34', 'learning_rate': '4.934e-06', 'epoch': '1.672'}
+{'loss': '1.778', 'grad_norm': '48.11', 'learning_rate': '4.696e-06', 'epoch': '1.737'}
+{'loss': '1.956', 'grad_norm': '51.19', 'learning_rate': '4.458e-06', 'epoch': '1.801'}
+{'loss': '1.619', 'grad_norm': '55.74', 'learning_rate': '4.219e-06', 'epoch': '1.865'}
+{'loss': '1.7', 'grad_norm': '46.07', 'learning_rate': '3.981e-06', 'epoch': '1.93'}
+{'loss': '1.713', 'grad_norm': '52.01', 'learning_rate': '3.743e-06', 'epoch': '1.994'}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+                                                     
+
+
+                                                 
+[A
+
+
+                                                 [A{'eval_loss': '0.3045', 'eval_wer': '0.2807', 'eval_cer': '0.06397', 'eval_runtime': '336.7', 'eval_samples_per_second': '1.464', 'eval_steps_per_second': '0.734', 'epoch': '2'}
+
+
+Writing model shards:   0%|          | 0/1 [00:00<?, ?it/s][A
+
+Writing model shards: 100%|██████████| 1/1 [00:00<00:00,  1.01it/s][A
+Writing model shards: 100%|██████████| 1/1 [00:00<00:00,  1.01it/s]
+/Users/mulisamusehane/Documents/GitHub/MultilingualASR/.venv/lib/python3.12/site-packages/torch/utils/data/dataloader.py:759: UserWarning: 'pin_memory' argument is set as true but not supported on MPS now, device pinned memory won't be used.
+  super().__init__(loader)
+
+                                                     
+
+                                                     
+
+                                                     
+
+                                                     
+
+                                                     
+
+                                                   
+
+                                                   
+
+                                                   
+
+                                                   
+
+                                                   
+
+                                                   
+
+                                                   
+
+                                                   
+
+                                                   
+
+                                                   
+
+{'loss': '0.9448', 'grad_norm': '45.43', 'learning_rate': '3.266e-06', 'epoch': '2.122'}
+{'loss': '0.8551', 'grad_norm': '24.81', 'learning_rate': '3.027e-06', 'epoch': '2.187'}
+{'loss': '0.8085', 'grad_norm': '29.83', 'learning_rate': '2.789e-06', 'epoch': '2.251'}
+{'loss': '1.014', 'grad_norm': '37.82', 'learning_rate': '2.551e-06', 'epoch': '2.315'}
+{'loss': '0.9373', 'grad_norm': '30.48', 'learning_rate': '2.312e-06', 'epoch': '2.38'}
+{'loss': '0.8154', 'grad_norm': '27.49', 'learning_rate': '2.074e-06', 'epoch': '2.444'}
+{'loss': '0.8753', 'grad_norm': '32.73', 'learning_rate': '1.836e-06', 'epoch': '2.508'}
+{'loss': '0.7682', 'grad_norm': '35.62', 'learning_rate': '1.597e-06', 'epoch': '2.573'}
+{'loss': '0.9996', 'grad_norm': '34.37', 'learning_rate': '1.359e-06', 'epoch': '2.637'}
+{'loss': '0.7812', 'grad_norm': '31.48', 'learning_rate': '1.12e-06', 'epoch': '2.701'}
+{'loss': '0.8043', 'grad_norm': '37', 'learning_rate': '8.82e-07', 'epoch': '2.766'}
+{'loss': '0.8646', 'grad_norm': '34.45', 'learning_rate': '6.436e-07', 'epoch': '2.83'}
+{'loss': '0.882', 'grad_norm': '38.14', 'learning_rate': '4.052e-07', 'epoch': '2.894'}
+{'loss': '0.8947', 'grad_norm': '41.4', 'learning_rate': '1.669e-07', 'epoch': '2.959'}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+                                                   
+
+
+                                                 
+[A
+
+
+                                                 [A{'eval_loss': '0.2959', 'eval_wer': '0.265', 'eval_cer': '0.06017', 'eval_runtime': '251.9', 'eval_samples_per_second': '1.957', 'eval_steps_per_second': '0.98', 'epoch': '3'}
+
+
+Writing model shards:   0%|          | 0/1 [00:00<?, ?it/s][A
+
+Writing model shards: 100%|██████████| 1/1 [00:01<00:00,  1.07s/it][A
+Writing model shards: 100%|██████████| 1/1 [00:01<00:00,  1.07s/it]
+
+                                                   
+
+
+/Users/mulisamusehane/Documents/GitHub/MultilingualASR/.venv/lib/python3.12/site-packages/torch/utils/data/dataloader.py:759: UserWarning: 'pin_memory' argument is set as true but not supported on MPS now, device pinned memory won't be used.
+  super().__init__(loader)
+{'train_runtime': '2.005e+04', 'train_samples_per_second': '0.744', 'train_steps_per_second': '0.047', 'train_loss': '4.341', 'epoch': '3'}
+
+
+== whisper pilot result ==
+eval WER: 0.265 | eval CER: 0.060
+(zero-shot Whisper Large v3 baseline on NCHLT test: WER 1.108, CER 0.763)
+(Wav2Vec2 pilot v2 on NCHLT test: WER 0.332, CER 0.074)
+
+Writing model shards:   0%|          | 0/1 [00:00<?, ?it/s]
+Writing model shards: 100%|██████████| 1/1 [00:00<00:00,  1.10it/s]
+Writing model shards: 100%|██████████| 1/1 [00:00<00:00,  1.10it/s]
+model saved -> /Users/mulisamusehane/Documents/GitHub/MultilingualASR/results/whisper-ven-pilot/final

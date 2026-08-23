@@ -1,5 +1,27 @@
 # Tshivenda MPS Pilot Fine-Tune - Results
 
+## Whisper pilot v1 - works cleanly, best result so far
+
+`src/pilot_finetune_whisper_mps.py`, whisper-small, 5,000 NCHLT train clips
+(<= 10 s cap, 4,974 kept), 493 eval clips, 3 epochs, M4 MacBook (MPS).
+Placeholder language token "sw" (Swahili) used since Whisper has no `<|ven|>`
+token - see the module docstring for the reasoning. NOT the real Stage 1
+(whisper-large-v3, full data, GPU) - same proof-of-recipe role as the
+Wav2Vec2 pilots.
+
+| Epoch | eval WER | eval CER |
+|---|---|---|
+| 1 | 0.428 | 0.110 |
+| 2 | 0.281 | 0.064 |
+| 3 (final) | **0.265** | **0.060** |
+
+Steady, clean improvement every epoch - no collapse pattern (contrast with
+AfriHuBERT below, where WER/CER froze bit-for-bit across every attempt).
+Already beats Wav2Vec2 pilot v2 (WER 0.332, CER 0.074) despite fewer total
+epochs (3 vs. 8) and no ANV data in the mix - Whisper's pretraining is a
+much stronger starting point for this small a pilot. Full log:
+`results/logs/whisper_pilot_v1_wer0265.log`.
+
 ## AfriHuBERT (third model attempt) - failed, total training collapse
 
 Attempted `ajesujoba/AfriHuBERT` as the third distinct ASR model family
