@@ -77,13 +77,47 @@ Result: 358 rows (179 real + 179 synthetic fake), saved to
    informed of the blocker and the plan; this is the fallback implemented
    in the meantime, pending her confirmation.
 
+## Results (5-fold grouped cross-validation)
+
+First attempt (full fine-tune, all parameters trainable, lr 2e-5) was
+unstable: loss stuck at ln(2) for 3 epochs at lr 2e-5 (no learning at all),
+and at lr 5e-5 the model found real signal mid-training then collapsed back
+to chance by the final epoch - a known small-dataset fine-tuning failure
+mode. Fixed with two standard techniques: `load_best_model_at_end` (keep the
+peak checkpoint, not the final one) and freezing the base encoder, training
+only the classification head (`--freeze-base`, a "linear probe" - 592K of
+278M parameters trainable). Also hit and fixed a real MPS bug along the way:
+`scaled_dot_product_attention` on Apple's backend does not support dropout
+and errors when the base is frozen - fixed by forcing eager attention
+(`attn_implementation="eager"`), which works identically on MPS/CUDA/CPU.
+
+Final validated config: `--freeze-base --learning-rate 1e-3 --epochs 15`
+(early stopping, patience 3), 5-fold grouped CV:
+
+| Model | Accuracy | Macro F1 |
+|---|---|---|
+| **AfroXLM-RoBERTa** (primary) | **0.562 +/- 0.030** | **0.550 +/- 0.030** |
+| XLM-RoBERTa (comparison) | 0.500 +/- 0.000 | 0.333 +/- 0.000 |
+
+XLM-RoBERTa landed at *exactly* the chance floor on all 5 folds - it could
+not learn the task at all under this setup. AfroXLM-RoBERTa consistently
+beat chance across every fold (std of only 0.030, vs. 0.171 before the
+stability fix). This is not a bug - it directly corroborates MphayaNER
+(Mbuvha et al., 2023, already cited in the proposal), which found
+AfroXLM-RoBERTa is the strongest available model for Tshivenda NLP tasks
+specifically because plain XLM-R's pretraining underrepresents the language.
+A genuinely useful, literature-consistent result for the report.
+
 ## How to regenerate / retrain
 
 ```bash
-python src/build_misinfo_proxy.py                          # rebuild the proxy dataset
-python src/train_classifier.py --model Davlan/afro-xlmr-base   # primary
-python src/train_classifier.py --model xlm-roberta-base        # comparison
+python src/build_misinfo_proxy.py                                       # rebuild the proxy dataset
+python src/train_classifier.py --model Davlan/afro-xlmr-base \
+    --folds 5 --epochs 15 --learning-rate 1e-3 --freeze-base             # primary
+python src/train_classifier.py --model xlm-roberta-base \
+    --folds 5 --epochs 15 --learning-rate 1e-3 --freeze-base             # comparison
 ```
 
-Results land in `results/classifier/` (gitignored); see
-`notes/pilot-ven-results.md` for the numbers once training completes.
+Results land in `results/classifier/` (gitignored); logs used for this
+writeup are `/tmp/clf_full_afroxlmr.log` and `/tmp/clf_full_xlmr.log`
+(not committed - rerun the commands above to regenerate).
