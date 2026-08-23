@@ -51,9 +51,24 @@ def load_rows(csv_path):
     return rows
 
 
-def run_fold(model_name, train_rows, eval_rows, epochs, batch_size, seed):
+def run_fold(model_name, train_rows, eval_rows, epochs, batch_size, seed, learning_rate=2e-5,
+             freeze_base=False):
     tokenizer = AutoTokenizer.from_pretrained(model_name)
-    model = AutoModelForSequenceClassification.from_pretrained(model_name, num_labels=2)
+    # eager attention: MPS's scaled_dot_product_attention path does not support
+    # dropout and errors when the base is frozen (different kernel selection) -
+    # eager works identically everywhere (MPS/CUDA/CPU), just slightly slower
+    model = AutoModelForSequenceClassification.from_pretrained(
+        model_name, num_labels=2, attn_implementation="eager")
+
+    if freeze_base:
+        # linear-probe: only the classification head is trainable - far fewer
+        # parameters than examples, much more stable on a ~150-example dataset
+        base = getattr(model, model.base_model_prefix)
+        for p in base.parameters():
+            p.requires_grad = False
+        n_trainable = sum(p.numel() for p in model.parameters() if p.requires_grad)
+        n_total = sum(p.numel() for p in model.parameters())
+        print(f"frozen base: {n_trainable:,} / {n_total:,} parameters trainable")
 
     def tokenize(batch):
         return tokenizer(batch["text"], truncation=True, max_length=512, padding="max_length")
@@ -72,22 +87,30 @@ def run_fold(model_name, train_rows, eval_rows, epochs, batch_size, seed):
         per_device_train_batch_size=batch_size,
         per_device_eval_batch_size=batch_size,
         eval_strategy="epoch",
-        save_strategy="no",
+        save_strategy="epoch",
+        save_total_limit=1,
+        load_best_model_at_end=True,
+        metric_for_best_model="macro_f1",
+        greater_is_better=True,
         logging_steps=10,
-        learning_rate=2e-5,
+        learning_rate=learning_rate,
+        warmup_ratio=0.1,
         num_train_epochs=epochs,
         seed=seed,
         use_cpu=(device == "cpu"),
         report_to=[],
     )
+    from transformers import EarlyStoppingCallback
     trainer = Trainer(model=model, args=args, train_dataset=train_ds, eval_dataset=eval_ds,
-                      compute_metrics=compute_metrics)
+                      compute_metrics=compute_metrics,
+                      callbacks=[EarlyStoppingCallback(early_stopping_patience=3)])
     trainer.train()
     metrics = trainer.evaluate()
     return metrics["eval_accuracy"], metrics["eval_macro_f1"]
 
 
-def cross_validate(model_name, folds, epochs, batch_size, seed):
+def cross_validate(model_name, folds, epochs, batch_size, seed, learning_rate=2e-5,
+                   freeze_base=False):
     rows = load_rows(DATA_CSV)
     groups = [r["source_id"] for r in rows]
     labels = [r["label"] for r in rows]
@@ -101,7 +124,8 @@ def cross_validate(model_name, folds, epochs, batch_size, seed):
         assert not (set(groups[j] for j in train_idx) & set(groups[j] for j in eval_idx)), \
             f"fold {i}: source_id leaked across train/eval"
 
-        acc, f1 = run_fold(model_name, train_rows, eval_rows, epochs, batch_size, seed)
+        acc, f1 = run_fold(model_name, train_rows, eval_rows, epochs, batch_size, seed, learning_rate,
+                           freeze_base)
         print(f"fold {i+1}/{folds}: n_train={len(train_rows)} n_eval={len(eval_rows)} "
               f"accuracy={acc:.3f} macro_f1={f1:.3f}")
         accs.append(acc)
@@ -120,6 +144,10 @@ if __name__ == "__main__":
     parser.add_argument("--epochs", type=int, default=3)
     parser.add_argument("--batch-size", type=int, default=4)
     parser.add_argument("--seed", type=int, default=42)
+    parser.add_argument("--learning-rate", type=float, default=2e-5)
+    parser.add_argument("--freeze-base", action="store_true",
+                        help="linear-probe: freeze the encoder, train only the classification head")
     args = parser.parse_args()
 
-    cross_validate(args.model, args.folds, args.epochs, args.batch_size, args.seed)
+    cross_validate(args.model, args.folds, args.epochs, args.batch_size, args.seed, args.learning_rate,
+                   args.freeze_base)
