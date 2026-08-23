@@ -41,8 +41,9 @@ again.
 Attempted as the third distinct ASR model family (Wav2Vec2 = contrastive
 self-supervision, Whisper = weakly-supervised encoder-decoder, HuBERT =
 masked cluster-prediction self-supervision - confirmed to cover Tshivenda,
-see the model-search writeup in conversation history / notes). Four
-configurations, all collapsed to the identical degenerate solution:
+see the model-search writeup in conversation history / notes). Six
+configurations attempted in total; the first four collapsed to the
+identical degenerate solution:
 
 1. `hubert_attempt1_lr1e4_frozen_collapsed.log` - default config (same
    hyperparameters that worked for Wav2Vec2), frozen feature encoder,
@@ -69,12 +70,36 @@ given eval subset regardless of what the model actually learned elsewhere.
 Ruled out as the cause: CTC length-constraint violations (checked directly,
 0/100 examples affected).
 
-**Conclusion**: total blank collapse, not resolved by four standard
-mitigations (lower LR, unfreezing, longer warmup) within the project
-timeline. `src/pilot_finetune_hubert_mps.py` and
-`notebooks/colab_hubert_ven.ipynb` are kept in the repo (with
-`--warmup-ratio` and `--unfreeze-feature-encoder` flags added during this
-investigation) in case further debugging resumes later, but AfriHuBERT is
-not currently usable as the third model without more work than the timeline
-allows. See `notes/pilot-ven-results.md` for the write-up and the proposed
-message to Seani about picking a different third model.
+Two more attempts after the root cause was confirmed:
+
+5. `hubert_attempt5_blankbias_still_collapsed_to_a.log` - manually pushed the
+   freshly-initialized CTC head's blank-token bias down at init
+   (`--disfavor-blank-init`), the standard targeted fix for blank collapse
+   specifically. Result: the collapse just moved - the model now predicts
+   `'a'` (the single most frequent character in Tshivenda) for ~100% of
+   frames instead of blank. Confirms the failure mode is "collapse to
+   whichever single class is easiest," not something specific to the blank
+   token - a deeper optimisation issue than a blank-bias nudge can fix.
+6. `hubert_attempt6_25epochs_patience_still_collapsed.log` - definitive
+   patience test: 25 epochs, early stopping disabled (`--patience 30`) so it
+   could not be cut short. WER/CER stayed bit-for-bit pinned at 0.9668/0.962
+   for all 25 epochs; loss fell steadily through epoch ~17 then visibly
+   plateaued (2.998 at epoch 16 -> 2.957 at epoch 25, essentially flat) with
+   zero corresponding change in predictions. Rules out "just needs more
+   epochs" - this is a stable local minimum, not slow convergence.
+
+**Conclusion**: total collapse into a single-dominant-class degenerate
+solution, not resolved by six systematic attempts (default config, 2x lower
+LR, unfrozen encoder, 3x longer warmup, blank-bias correction, and disabled
+early stopping across 25 epochs) within the project timeline. Root cause
+confirmed by direct inspection of decoded predictions at every stage, not
+just inferred from WER. `src/pilot_finetune_hubert_mps.py` and
+`notebooks/colab_hubert_ven.ipynb` are kept in the repo (with the diagnostic
+flags added during this investigation: `--unfreeze-feature-encoder`,
+`--warmup-ratio`, `--disfavor-blank-init`, `--blank-bias-penalty`,
+`--patience`) in case debugging resumes later - e.g. on a CUDA GPU, in case
+this is specific to the MPS/eager-attention fallback path this machine
+requires. AfriHuBERT is not currently usable as the third model without more
+work than the timeline allows. See `notes/pilot-ven-results.md` for the
+write-up and the proposed message to Seani about picking a different third
+model.
