@@ -1,8 +1,9 @@
 # Run Logs
 
-**Run count so far: 16 total training runs** (6 classifier, 2 Wav2Vec2 pilots,
-6 AfriHuBERT attempts, 2 Whisper pilots - v2 in progress). Updated as each
-new run finishes; every run (success or failure) gets one entry here.
+**Run count so far: 18 total training runs** (6 classifier, 2 Wav2Vec2 pilots,
+6 AfriHuBERT attempts, 4 Whisper runs - v1 done, an aborted v2 attempt,
+a rescoped v2 in progress). Updated as each new run finishes; every run
+(success, failure, or abort) gets one entry here.
 
 Raw (progress-bar-stripped) console output from every training run, kept as
 evidence alongside the summarised numbers in `notes/`. Chronological order
@@ -46,9 +47,17 @@ again.
    3 epochs. Steady improvement every epoch, no collapse: WER 0.428 -> 0.281
    -> 0.265, CER 0.110 -> 0.064 -> 0.060. Beats Wav2Vec2 pilot v2 (WER 0.332)
    despite fewer epochs and no ANV data. See `notes/pilot-ven-results.md`.
-2. Whisper pilot v2 - in progress: resumed from v1 weights, ANV clips added,
-   5 more epochs, lr 5e-5 (mirrors the Wav2Vec2 v1->v2 pattern). Log will be
-   added here as `whisper_pilot_v2_<result>.log` once it finishes.
+2. Whisper pilot v2, attempt 1 - **aborted, over-scoped, not a model
+   failure**. Used `--train-clips 100000` (i.e. the entire 60,087-clip
+   combined NCHLT+ANV train pool) intending "more data = better", but at
+   16.4s/step x 11,505 total steps that's a ~51-hour run (tqdm's own ETA) -
+   wildly out of proportion with Wav2Vec2's v1->v2 jump (6.5h for 7,325
+   clips). Killed after ~1.4h (300/11,505 steps, no results to salvage) once
+   the real step-rate revealed the scale problem.
+3. Whisper pilot v2, attempt 2 (rescoped) - in progress: same resume-from-v1
+   + ANV + 5-epoch recipe, but capped at `--train-clips 12000` raw (nets
+   ~7,300 clips after the 10s filter, matching Wav2Vec2 v2's scale). Log
+   will be added here as `whisper_pilot_v2_<result>.log` once it finishes.
 
 ## AfriHuBERT pilot - failed, total CTC blank collapse
 
