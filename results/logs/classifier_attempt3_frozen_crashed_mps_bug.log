@@ -1,0 +1,116 @@
+
+[transformers] [1mXLMRobertaForSequenceClassification LOAD REPORT[0m from: Davlan/afro-xlmr-base
+Key                        | Status     | 
+---------------------------+------------+-
+lm_head.bias               | UNEXPECTED | 
+lm_head.layer_norm.bias    | UNEXPECTED | 
+lm_head.layer_norm.weight  | UNEXPECTED | 
+lm_head.dense.bias         | UNEXPECTED | 
+lm_head.dense.weight       | UNEXPECTED | 
+classifier.out_proj.bias   | MISSING    | 
+classifier.dense.weight    | MISSING    | 
+classifier.dense.bias      | MISSING    | 
+classifier.out_proj.weight | MISSING    | 
+
+Notes:
+- UNEXPECTED:	can be ignored when loading from different task/architecture; not ok if you expect identical arch.
+- MISSING:	those params were newly initialized because missing from the checkpoint. Consider training on your downstream task.
+frozen base: 592,130 / 278,045,186 parameters trainable
+
+
+[transformers] warmup_ratio is deprecated and will be removed in v5.2. Use `warmup_steps` instead.
+
+  super().__init__(loader)
+Traceback (most recent call last):
+  File "/Users/mulisamusehane/Documents/GitHub/MultilingualASR/src/train_classifier.py", line 148, in <module>
+    cross_validate(args.model, args.folds, args.epochs, args.batch_size, args.seed, args.learning_rate,
+  File "/Users/mulisamusehane/Documents/GitHub/MultilingualASR/src/train_classifier.py", line 123, in cross_validate
+    acc, f1 = run_fold(model_name, train_rows, eval_rows, epochs, batch_size, seed, learning_rate,
+              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/mulisamusehane/Documents/GitHub/MultilingualASR/src/train_classifier.py", line 103, in run_fold
+    trainer.train()
+  File "/Users/mulisamusehane/Documents/GitHub/MultilingualASR/.venv/lib/python3.12/site-packages/transformers/trainer.py", line 1437, in train
+    return inner_training_loop(
+           ^^^^^^^^^^^^^^^^^^^^
+  File "/Users/mulisamusehane/Documents/GitHub/MultilingualASR/.venv/lib/python3.12/site-packages/transformers/trainer.py", line 1519, in _inner_training_loop
+    self._run_epoch(
+  File "/Users/mulisamusehane/Documents/GitHub/MultilingualASR/.venv/lib/python3.12/site-packages/transformers/trainer.py", line 1747, in _run_epoch
+    tr_loss_step = self.training_step(model, inputs, num_items_in_batch)
+                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/mulisamusehane/Documents/GitHub/MultilingualASR/.venv/lib/python3.12/site-packages/transformers/trainer.py", line 1919, in training_step
+    loss = self.compute_loss(model, inputs, num_items_in_batch=num_items_in_batch)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/mulisamusehane/Documents/GitHub/MultilingualASR/.venv/lib/python3.12/site-packages/transformers/trainer.py", line 1993, in compute_loss
+    outputs = model(**inputs)
+              ^^^^^^^^^^^^^^^
+  File "/Users/mulisamusehane/Documents/GitHub/MultilingualASR/.venv/lib/python3.12/site-packages/torch/nn/modules/module.py", line 1778, in _wrapped_call_impl
+    return self._call_impl(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/mulisamusehane/Documents/GitHub/MultilingualASR/.venv/lib/python3.12/site-packages/torch/nn/modules/module.py", line 1789, in _call_impl
+    return forward_call(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/mulisamusehane/Documents/GitHub/MultilingualASR/.venv/lib/python3.12/site-packages/transformers/utils/generic.py", line 911, in wrapper
+    output = func(self, *args, **kwargs)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/mulisamusehane/Documents/GitHub/MultilingualASR/.venv/lib/python3.12/site-packages/transformers/models/xlm_roberta/modeling_xlm_roberta.py", line 958, in forward
+    outputs = self.roberta(
+              ^^^^^^^^^^^^^
+  File "/Users/mulisamusehane/Documents/GitHub/MultilingualASR/.venv/lib/python3.12/site-packages/torch/nn/modules/module.py", line 1778, in _wrapped_call_impl
+    return self._call_impl(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/mulisamusehane/Documents/GitHub/MultilingualASR/.venv/lib/python3.12/site-packages/torch/nn/modules/module.py", line 1789, in _call_impl
+    return forward_call(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/mulisamusehane/Documents/GitHub/MultilingualASR/.venv/lib/python3.12/site-packages/transformers/utils/generic.py", line 1040, in wrapper
+    output = func(self, *args, **kwargs)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/mulisamusehane/Documents/GitHub/MultilingualASR/.venv/lib/python3.12/site-packages/transformers/utils/output_capturing.py", line 262, in wrapper
+    outputs = func(self, *args, **kwargs)
+              ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/mulisamusehane/Documents/GitHub/MultilingualASR/.venv/lib/python3.12/site-packages/transformers/models/xlm_roberta/modeling_xlm_roberta.py", line 641, in forward
+    encoder_outputs = self.encoder(
+                      ^^^^^^^^^^^^^
+  File "/Users/mulisamusehane/Documents/GitHub/MultilingualASR/.venv/lib/python3.12/site-packages/torch/nn/modules/module.py", line 1778, in _wrapped_call_impl
+    return self._call_impl(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/mulisamusehane/Documents/GitHub/MultilingualASR/.venv/lib/python3.12/site-packages/torch/nn/modules/module.py", line 1789, in _call_impl
+    return forward_call(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/mulisamusehane/Documents/GitHub/MultilingualASR/.venv/lib/python3.12/site-packages/transformers/models/xlm_roberta/modeling_xlm_roberta.py", line 535, in forward
+    hidden_states = layer_module(
+                    ^^^^^^^^^^^^^
+  File "/Users/mulisamusehane/Documents/GitHub/MultilingualASR/.venv/lib/python3.12/site-packages/transformers/modeling_layers.py", line 110, in __call__
+    return super().__call__(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/mulisamusehane/Documents/GitHub/MultilingualASR/.venv/lib/python3.12/site-packages/torch/nn/modules/module.py", line 1778, in _wrapped_call_impl
+    return self._call_impl(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/mulisamusehane/Documents/GitHub/MultilingualASR/.venv/lib/python3.12/site-packages/torch/nn/modules/module.py", line 1789, in _call_impl
+    return forward_call(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/mulisamusehane/Documents/GitHub/MultilingualASR/.venv/lib/python3.12/site-packages/transformers/models/xlm_roberta/modeling_xlm_roberta.py", line 434, in forward
+    self_attention_output, _ = self.attention(
+                               ^^^^^^^^^^^^^^^
+  File "/Users/mulisamusehane/Documents/GitHub/MultilingualASR/.venv/lib/python3.12/site-packages/torch/nn/modules/module.py", line 1778, in _wrapped_call_impl
+    return self._call_impl(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/mulisamusehane/Documents/GitHub/MultilingualASR/.venv/lib/python3.12/site-packages/torch/nn/modules/module.py", line 1789, in _call_impl
+    return forward_call(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/mulisamusehane/Documents/GitHub/MultilingualASR/.venv/lib/python3.12/site-packages/transformers/models/xlm_roberta/modeling_xlm_roberta.py", line 365, in forward
+    attention_output, attn_weights = self.self(
+                                     ^^^^^^^^^^
+  File "/Users/mulisamusehane/Documents/GitHub/MultilingualASR/.venv/lib/python3.12/site-packages/torch/nn/modules/module.py", line 1778, in _wrapped_call_impl
+    return self._call_impl(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/mulisamusehane/Documents/GitHub/MultilingualASR/.venv/lib/python3.12/site-packages/torch/nn/modules/module.py", line 1789, in _call_impl
+    return forward_call(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/mulisamusehane/Documents/GitHub/MultilingualASR/.venv/lib/python3.12/site-packages/transformers/models/xlm_roberta/modeling_xlm_roberta.py", line 243, in forward
+    attn_output, attn_weights = attention_interface(
+                                ^^^^^^^^^^^^^^^^^^^^
+  File "/Users/mulisamusehane/Documents/GitHub/MultilingualASR/.venv/lib/python3.12/site-packages/transformers/integrations/sdpa_attention.py", line 154, in sdpa_attention_forward
+    attn_output = torch.nn.functional.scaled_dot_product_attention(
+                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+NotImplementedError: scaled_dot_product_attention for MPS does not support dropout.
+
