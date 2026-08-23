@@ -17,7 +17,7 @@ from pathlib import Path
 
 import soundfile as sf
 import torch
-from jiwer import cer, wer
+from jiwer import cer, process_words
 from transformers import Wav2Vec2ForCTC, Wav2Vec2Processor
 
 import sys
@@ -54,14 +54,20 @@ def evaluate(checkpoint, limit, seed, n_examples, save_predictions=None):
                 rate = (i + 1) / (time.time() - start)
                 print(f"  {name}: {i+1}/{len(sample)} ({rate:.1f} clips/s)")
 
-        corpus_wer = wer(refs, hyps)
+        word_metrics = process_words(refs, hyps)
+        corpus_wer = word_metrics.wer
+        corpus_mer = word_metrics.mer
+        corpus_wil = word_metrics.wil
+        corpus_wip = word_metrics.wip
         corpus_cer = cer(refs, hyps)
         empty_preds = sum(1 for h in hyps if not h)
-        results[name] = {"wer": corpus_wer, "cer": corpus_cer, "n": len(sample),
+        results[name] = {"wer": corpus_wer, "cer": corpus_cer, "mer": corpus_mer,
+                         "wil": corpus_wil, "wip": corpus_wip, "n": len(sample),
                          "empty_preds": empty_preds}
 
         print(f"\n== {name} ==")
         print(f"n={len(sample)}  WER={corpus_wer:.3f}  CER={corpus_cer:.3f}  "
+              f"MER={corpus_mer:.3f}  WIL={corpus_wil:.3f}  WIP={corpus_wip:.3f}  "
               f"empty predictions={empty_preds}")
         for ref, hyp in list(zip(refs, hyps))[:n_examples]:
             print(f"  ref: {ref}")
@@ -80,9 +86,10 @@ def evaluate(checkpoint, limit, seed, n_examples, save_predictions=None):
             print(f"  predictions saved -> {pred_file}")
 
     print("== summary ==")
-    print(f"{'corpus':<14} {'n':>5} {'WER':>7} {'CER':>7}")
+    print(f"{'corpus':<14} {'n':>5} {'WER':>7} {'CER':>7} {'MER':>7} {'WIL':>7} {'WIP':>7}")
     for name, r in results.items():
-        print(f"{name:<14} {r['n']:>5} {r['wer']:>7.3f} {r['cer']:>7.3f}")
+        print(f"{name:<14} {r['n']:>5} {r['wer']:>7.3f} {r['cer']:>7.3f} "
+              f"{r['mer']:>7.3f} {r['wil']:>7.3f} {r['wip']:>7.3f}")
     return results
 
 
