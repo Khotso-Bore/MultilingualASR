@@ -22,27 +22,28 @@ inspection of decoded predictions at every stage, not just inferred from a
 frozen WER number. Full evidence trail: `results/logs/README.md` and the six
 `results/logs/hubert_attempt*.log` files.
 
-**Recommendation**: do not spend more time on AfriHuBERT within this
-project's timeline. `src/pilot_finetune_hubert_mps.py` and
-`notebooks/colab_hubert_ven.ipynb` are kept in the repo in case debugging
-resumes later (e.g. on a real GPU, in case this is specific to the
-MPS/eager-attention fallback this machine required). Proposed message to
-Seani:
+**Decision (given the timeline): proceed with 2 model families - Wav2Vec2
+and Whisper.** AfriHuBERT stands as a documented, fully-evidenced failed
+attempt at a third family rather than an open thread to keep pulling on.
+`src/pilot_finetune_hubert_mps.py` and `notebooks/colab_hubert_ven.ipynb`
+stay in the repo in case debugging resumes later (e.g. on a real GPU, in
+case this is specific to the MPS/eager-attention fallback this machine
+required), but nothing further is planned against the current timeline.
+
+Message sent to Seani:
 
 > Update on the third model - AfriHuBERT covers Tshivenda and is cheap to
 > integrate, but it won't train: 6 different configurations all collapse
 > into predicting a single repeated token no matter what we change (lower
 > learning rate, unfreezing, longer warmup, a targeted fix for the collapse,
 > and a 25-epoch patience test that ruled out "just needs more time"). Fully
-> documented in the repo. Options: (1) I try it on a real GPU instead of my
-> laptop's MPS backend, in case that's the actual cause, (2) we pick a
-> different third model - the only other one I found that's confirmed to
-> cover Tshivenda is ESPnet's XEUS, but it needs a separate toolkit
-> (ESPnet2) rather than the transformers pipeline everything else uses, so
-> it's a bigger time investment, or (3) we go with 2 model families
-> (Wav2Vec2 + Whisper) and document AfriHuBERT as an attempted-but-failed
-> third, with the full diagnostic trail as evidence we did the work. What do
-> you want to do given the timeline?
+> documented in the repo. Given the deadline, we're going with 2 model
+> families (Wav2Vec2 + Whisper) and documenting AfriHuBERT as an
+> attempted-but-failed third, with the full diagnostic trail as evidence of
+> the work. Let me know if you'd rather we pursue a different third model
+> instead (the only other one I found with confirmed Tshivenda coverage is
+> ESPnet's XEUS, but it needs a separate toolkit outside our current
+> pipeline, so it's a bigger time cost).
 
 ## Pilot v2 update
 
