@@ -1,12 +1,15 @@
-"""Evaluate a local fine-tuned Wav2Vec2 CTC checkpoint on the Tshivenda eval sets.
+"""Evaluate a local fine-tuned CTC checkpoint on the Tshivenda eval sets.
 
-Companion to zero_shot_baseline.py: same eval sets (NCHLT test, ANV dev_test),
-same sampling (--limit clips, --seed), same output normalisation - so the
-resulting WER/CER are directly comparable to the zero-shot Whisper table.
+Works with any CTC model checkpoint (Wav2Vec2, HuBERT, ...) via AutoModelForCTC,
+not just Wav2Vec2 - despite the filename. Companion to zero_shot_baseline.py:
+same eval sets (NCHLT test, ANV dev_test), same sampling (--limit clips,
+--seed), same output normalisation - so the resulting WER/CER are directly
+comparable across every model in the comparison (Whisper, Wav2Vec2, AfriHuBERT).
 
 Usage:
     python src/evaluate_wav2vec2.py --checkpoint results/wav2vec2-ven-pilot/final \
         --save-predictions results/preds_pilot
+    python src/evaluate_wav2vec2.py --checkpoint results/hubert-ven-pilot/final
 """
 
 import argparse
@@ -18,7 +21,7 @@ from pathlib import Path
 import soundfile as sf
 import torch
 from jiwer import cer, process_words
-from transformers import Wav2Vec2ForCTC, Wav2Vec2Processor
+from transformers import AutoModelForCTC, Wav2Vec2Processor
 
 import sys
 sys.path.insert(0, str(Path(__file__).resolve().parent))
@@ -31,7 +34,9 @@ def evaluate(checkpoint, limit, seed, n_examples, save_predictions=None):
     print(f"checkpoint: {checkpoint} | device: {device} | sample per corpus: {limit} | seed: {seed}")
 
     processor = Wav2Vec2Processor.from_pretrained(checkpoint)
-    model = Wav2Vec2ForCTC.from_pretrained(checkpoint).to(device).eval()
+    # AutoModelForCTC dispatches on the checkpoint's own architecture, so this
+    # loads Wav2Vec2, HuBERT, or any other CTC model checkpoint transparently
+    model = AutoModelForCTC.from_pretrained(checkpoint, attn_implementation="eager").to(device).eval()
 
     results = {}
     for name, csv_path in EVAL_SETS.items():
