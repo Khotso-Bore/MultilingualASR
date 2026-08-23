@@ -1,5 +1,9 @@
 # Run Logs
 
+**Run count so far: 16 total training runs** (6 classifier, 2 Wav2Vec2 pilots,
+6 AfriHuBERT attempts, 2 Whisper pilots - v2 in progress). Updated as each
+new run finishes; every run (success or failure) gets one entry here.
+
 Raw (progress-bar-stripped) console output from every training run, kept as
 evidence alongside the summarised numbers in `notes/`. Chronological order
 below matches how the classifier's methodology actually evolved - the
@@ -35,6 +39,16 @@ was created. Only the summarised numbers survive, in
 `notes/pilot-ven-results.md`. Every run from this point forward is redirected
 to a persistent log file and copied here, specifically to avoid losing this
 again.
+
+## Whisper pilot - works cleanly, best ASR result so far
+
+1. `whisper_pilot_v1_wer0265.log` - whisper-small, 5,000 NCHLT clips (<=10s),
+   3 epochs. Steady improvement every epoch, no collapse: WER 0.428 -> 0.281
+   -> 0.265, CER 0.110 -> 0.064 -> 0.060. Beats Wav2Vec2 pilot v2 (WER 0.332)
+   despite fewer epochs and no ANV data. See `notes/pilot-ven-results.md`.
+2. Whisper pilot v2 - in progress: resumed from v1 weights, ANV clips added,
+   5 more epochs, lr 5e-5 (mirrors the Wav2Vec2 v1->v2 pattern). Log will be
+   added here as `whisper_pilot_v2_<result>.log` once it finishes.
 
 ## AfriHuBERT pilot - failed, total CTC blank collapse
 
