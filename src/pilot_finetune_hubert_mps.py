@@ -124,7 +124,20 @@ def main(args):
             ignore_mismatched_sizes=True,
             attn_implementation="eager",  # MPS's SDPA path errors on dropout - see train_classifier.py
         )
-    model.freeze_feature_encoder()
+    if not args.unfreeze_feature_encoder:
+        model.freeze_feature_encoder()
+
+    if args.disfavor_blank_init and not args.resume_from:
+        # counter CTC blank collapse: the freshly-initialized head's blank
+        # logit starts on equal footing with every other class, and blank is
+        # the "safe" low-loss local minimum CTC gradient descent tends to
+        # fall into first. Push the blank bias down at init so the model
+        # starts slightly favouring non-blank predictions instead.
+        with torch.no_grad():
+            model.lm_head.bias[processor.tokenizer.pad_token_id] -= args.blank_bias_penalty
+        print(f"disfavoring blank at init: pad_token_id={processor.tokenizer.pad_token_id} "
+              f"bias -= {args.blank_bias_penalty}")
+
     model = model.to(device)
 
     out_dir = OUTPUT_DIR if not args.resume_from else OUTPUT_DIR.parent / (OUTPUT_DIR.name + "-v2")
@@ -142,7 +155,7 @@ def main(args):
         greater_is_better=False,
         logging_steps=20,
         learning_rate=args.learning_rate,
-        warmup_ratio=0.1,
+        warmup_ratio=args.warmup_ratio,
         num_train_epochs=args.epochs,
         fp16=False,
         gradient_checkpointing=True,
@@ -162,7 +175,7 @@ def main(args):
         train_dataset=ds["train"],
         eval_dataset=ds["eval"],
         processing_class=processor.feature_extractor,
-        callbacks=[EarlyStoppingCallback(early_stopping_patience=2)],
+        callbacks=[EarlyStoppingCallback(early_stopping_patience=args.patience)],
     )
 
     trainer.train()
@@ -188,5 +201,12 @@ if __name__ == "__main__":
     parser.add_argument("--learning-rate", type=float, default=1e-4)
     parser.add_argument("--resume-from", default=None)
     parser.add_argument("--include-anv", action="store_true")
+    parser.add_argument("--unfreeze-feature-encoder", action="store_true",
+                        help="diagnostic: don't freeze the conv feature encoder")
+    parser.add_argument("--warmup-ratio", type=float, default=0.1)
+    parser.add_argument("--disfavor-blank-init", action="store_true",
+                        help="push the CTC blank/pad logit down at init to counter blank collapse")
+    parser.add_argument("--blank-bias-penalty", type=float, default=5.0)
+    parser.add_argument("--patience", type=int, default=2)
     args = parser.parse_args()
     main(args)
