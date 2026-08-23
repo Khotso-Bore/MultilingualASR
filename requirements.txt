@@ -19,6 +19,9 @@ transformers>=4.40.0
 jiwer>=3.0.0
 accelerate>=1.1.0
 
+# Misinformation classifier (grouped k-fold cross-validation)
+scikit-learn>=1.4.0
+
 # Jupyter
 jupyter>=1.0.0
 ipykernel>=6.29.0
