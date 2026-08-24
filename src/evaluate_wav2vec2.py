@@ -1,12 +1,15 @@
-"""Evaluate a local fine-tuned Wav2Vec2 CTC checkpoint on the Tshivenda eval sets.
+"""Evaluate a local fine-tuned CTC checkpoint on the Tshivenda eval sets.
 
-Companion to zero_shot_baseline.py: same eval sets (NCHLT test, ANV dev_test),
-same sampling (--limit clips, --seed), same output normalisation - so the
-resulting WER/CER are directly comparable to the zero-shot Whisper table.
+Works with any CTC model checkpoint (Wav2Vec2, HuBERT, ...) via AutoModelForCTC,
+not just Wav2Vec2 - despite the filename. Companion to zero_shot_baseline.py:
+same eval sets (NCHLT test, ANV dev_test), same sampling (--limit clips,
+--seed), same output normalisation - so the resulting WER/CER are directly
+comparable across every model in the comparison (Whisper, Wav2Vec2, AfriHuBERT).
 
 Usage:
     python src/evaluate_wav2vec2.py --checkpoint results/wav2vec2-ven-pilot/final \
         --save-predictions results/preds_pilot
+    python src/evaluate_wav2vec2.py --checkpoint results/hubert-ven-pilot/final
 """
 
 import argparse
@@ -17,8 +20,8 @@ from pathlib import Path
 
 import soundfile as sf
 import torch
-from jiwer import cer, wer
-from transformers import Wav2Vec2ForCTC, Wav2Vec2Processor
+from jiwer import cer, process_words
+from transformers import AutoModelForCTC, Wav2Vec2Processor
 
 import sys
 sys.path.insert(0, str(Path(__file__).resolve().parent))
@@ -31,7 +34,9 @@ def evaluate(checkpoint, limit, seed, n_examples, save_predictions=None):
     print(f"checkpoint: {checkpoint} | device: {device} | sample per corpus: {limit} | seed: {seed}")
 
     processor = Wav2Vec2Processor.from_pretrained(checkpoint)
-    model = Wav2Vec2ForCTC.from_pretrained(checkpoint).to(device).eval()
+    # AutoModelForCTC dispatches on the checkpoint's own architecture, so this
+    # loads Wav2Vec2, HuBERT, or any other CTC model checkpoint transparently
+    model = AutoModelForCTC.from_pretrained(checkpoint, attn_implementation="eager").to(device).eval()
 
     results = {}
     for name, csv_path in EVAL_SETS.items():
@@ -54,14 +59,20 @@ def evaluate(checkpoint, limit, seed, n_examples, save_predictions=None):
                 rate = (i + 1) / (time.time() - start)
                 print(f"  {name}: {i+1}/{len(sample)} ({rate:.1f} clips/s)")
 
-        corpus_wer = wer(refs, hyps)
+        word_metrics = process_words(refs, hyps)
+        corpus_wer = word_metrics.wer
+        corpus_mer = word_metrics.mer
+        corpus_wil = word_metrics.wil
+        corpus_wip = word_metrics.wip
         corpus_cer = cer(refs, hyps)
         empty_preds = sum(1 for h in hyps if not h)
-        results[name] = {"wer": corpus_wer, "cer": corpus_cer, "n": len(sample),
+        results[name] = {"wer": corpus_wer, "cer": corpus_cer, "mer": corpus_mer,
+                         "wil": corpus_wil, "wip": corpus_wip, "n": len(sample),
                          "empty_preds": empty_preds}
 
         print(f"\n== {name} ==")
         print(f"n={len(sample)}  WER={corpus_wer:.3f}  CER={corpus_cer:.3f}  "
+              f"MER={corpus_mer:.3f}  WIL={corpus_wil:.3f}  WIP={corpus_wip:.3f}  "
               f"empty predictions={empty_preds}")
         for ref, hyp in list(zip(refs, hyps))[:n_examples]:
             print(f"  ref: {ref}")
@@ -80,9 +91,10 @@ def evaluate(checkpoint, limit, seed, n_examples, save_predictions=None):
             print(f"  predictions saved -> {pred_file}")
 
     print("== summary ==")
-    print(f"{'corpus':<14} {'n':>5} {'WER':>7} {'CER':>7}")
+    print(f"{'corpus':<14} {'n':>5} {'WER':>7} {'CER':>7} {'MER':>7} {'WIL':>7} {'WIP':>7}")
     for name, r in results.items():
-        print(f"{name:<14} {r['n']:>5} {r['wer']:>7.3f} {r['cer']:>7.3f}")
+        print(f"{name:<14} {r['n']:>5} {r['wer']:>7.3f} {r['cer']:>7.3f} "
+              f"{r['mer']:>7.3f} {r['wil']:>7.3f} {r['wip']:>7.3f}")
     return results
 
 

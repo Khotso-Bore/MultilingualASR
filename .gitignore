@@ -15,5 +15,9 @@ venv/
 dataset/raw/
 dataset/processed/
 
-# Experiment outputs (logs, per-run metrics, plots)
-results/
+# Experiment outputs: model checkpoints stay local (large, regeneratable
+# from a training run), but run logs are tracked - they're small and are the
+# evidence trail for the report (see results/logs/README.md)
+results/*
+!results/logs/
+!results/logs/**

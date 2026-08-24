@@ -1,0 +1,255 @@
+
+[transformers] [1mXLMRobertaForSequenceClassification LOAD REPORT[0m from: Davlan/afro-xlmr-base
+Key                        | Status     | 
+---------------------------+------------+-
+lm_head.layer_norm.bias    | UNEXPECTED | 
+lm_head.dense.weight       | UNEXPECTED | 
+lm_head.bias               | UNEXPECTED | 
+lm_head.dense.bias         | UNEXPECTED | 
+lm_head.layer_norm.weight  | UNEXPECTED | 
+classifier.out_proj.weight | MISSING    | 
+classifier.dense.weight    | MISSING    | 
+classifier.out_proj.bias   | MISSING    | 
+classifier.dense.bias      | MISSING    | 
+
+Notes:
+- UNEXPECTED:	can be ignored when loading from different task/architecture; not ok if you expect identical arch.
+- MISSING:	those params were newly initialized because missing from the checkpoint. Consider training on your downstream task.
+
+
+
+  super().__init__(loader)
+
+                                                
+
+                                                
+
+                                                
+
+                                                
+
+                                                
+
+                                                
+
+                                                
+
+{'loss': '0.7334', 'grad_norm': '1.966', 'learning_rate': '1.824e-05', 'epoch': '0.2778'}
+{'loss': '0.6842', 'grad_norm': '2.178', 'learning_rate': '1.731e-05', 'epoch': '0.4167'}
+{'loss': '0.7172', 'grad_norm': '1.031', 'learning_rate': '1.639e-05', 'epoch': '0.5556'}
+{'loss': '0.7175', 'grad_norm': '8.631', 'learning_rate': '1.546e-05', 'epoch': '0.6944'}
+{'loss': '0.7104', 'grad_norm': '3.92', 'learning_rate': '1.454e-05', 'epoch': '0.8333'}
+{'loss': '0.6997', 'grad_norm': '0.7734', 'learning_rate': '1.361e-05', 'epoch': '0.9722'}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+                                                
+
+
+                                               
+[A
+
+
+                                               [A/Users/mulisamusehane/Documents/GitHub/MultilingualASR/.venv/lib/python3.12/site-packages/torch/utils/data/dataloader.py:759: UserWarning: 'pin_memory' argument is set as true but not supported on MPS now, device pinned memory won't be used.
+  super().__init__(loader)
+
+                                                
+
+                                                
+
+                                                 
+
+                                                 
+
+                                                 
+
+                                                 
+
+                                                 
+
+{'loss': '0.7061', 'grad_norm': '4.411', 'learning_rate': '1.269e-05', 'epoch': '1.111'}
+{'loss': '0.6992', 'grad_norm': '1.436', 'learning_rate': '1.176e-05', 'epoch': '1.25'}
+{'loss': '0.6782', 'grad_norm': '2.743', 'learning_rate': '1.083e-05', 'epoch': '1.389'}
+{'loss': '0.6762', 'grad_norm': '2.78', 'learning_rate': '9.907e-06', 'epoch': '1.528'}
+{'loss': '0.6843', 'grad_norm': '1.936', 'learning_rate': '8.981e-06', 'epoch': '1.667'}
+{'loss': '0.7176', 'grad_norm': '1.338', 'learning_rate': '8.056e-06', 'epoch': '1.806'}
+{'loss': '0.7278', 'grad_norm': '1.546', 'learning_rate': '7.13e-06', 'epoch': '1.944'}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+                                                 
+
+
+                                               
+[A
+
+
+                                               [A/Users/mulisamusehane/Documents/GitHub/MultilingualASR/.venv/lib/python3.12/site-packages/torch/utils/data/dataloader.py:759: UserWarning: 'pin_memory' argument is set as true but not supported on MPS now, device pinned memory won't be used.
+  super().__init__(loader)
+
+                                                 
+
+                                                 
+
+                                                 
+
+                                                 
+
+                                                 
+
+                                                 
+
+                                                 
+
+{'loss': '0.7028', 'grad_norm': '1.372', 'learning_rate': '6.204e-06', 'epoch': '2.083'}
+{'loss': '0.6887', 'grad_norm': '3.343', 'learning_rate': '5.278e-06', 'epoch': '2.222'}
+{'loss': '0.6655', 'grad_norm': '2.491', 'learning_rate': '4.352e-06', 'epoch': '2.361'}
+{'loss': '0.6965', 'grad_norm': '1.123', 'learning_rate': '3.426e-06', 'epoch': '2.5'}
+{'loss': '0.6946', 'grad_norm': '1.255', 'learning_rate': '2.5e-06', 'epoch': '2.639'}
+{'loss': '0.693', 'grad_norm': '1.434', 'learning_rate': '1.574e-06', 'epoch': '2.778'}
+{'loss': '0.6852', 'grad_norm': '0.648', 'learning_rate': '6.481e-07', 'epoch': '2.917'}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+                                                 
+
+
+                                               
+[A
+
+
+                                               [A
+                                                 
+
+/Users/mulisamusehane/Documents/GitHub/MultilingualASR/.venv/lib/python3.12/site-packages/torch/utils/data/dataloader.py:759: UserWarning: 'pin_memory' argument is set as true but not supported on MPS now, device pinned memory won't be used.
+  super().__init__(loader)
+{'eval_loss': '0.6895', 'eval_accuracy': '0.5', 'eval_macro_f1': '0.3333', 'eval_runtime': '5.392', 'eval_samples_per_second': '13.35', 'eval_steps_per_second': '3.338', 'epoch': '3'}
+{'train_runtime': '341', 'train_samples_per_second': '2.516', 'train_steps_per_second': '0.633', 'train_loss': '0.6987', 'epoch': '3'}
+
+fold 1/5: n_train=286 n_eval=72 accuracy=0.500 macro_f1=0.333
+
+[transformers] [1mXLMRobertaForSequenceClassification LOAD REPORT[0m from: Davlan/afro-xlmr-base
+Key                        | Status     | 
+---------------------------+------------+-
+lm_head.layer_norm.bias    | UNEXPECTED | 
+lm_head.dense.weight       | UNEXPECTED | 
+lm_head.bias               | UNEXPECTED | 
+lm_head.dense.bias         | UNEXPECTED | 
+lm_head.layer_norm.weight  | UNEXPECTED | 
+classifier.out_proj.weight | MISSING    | 
+classifier.dense.weight    | MISSING    | 
+classifier.out_proj.bias   | MISSING    | 
+classifier.dense.bias      | MISSING    | 
+
+Notes:
+- UNEXPECTED:	can be ignored when loading from different task/architecture; not ok if you expect identical arch.
+- MISSING:	those params were newly initialized because missing from the checkpoint. Consider training on your downstream task.
+
+
+
+  super().__init__(loader)
+
+                                                
+
+                                                
+
+                                                
+
+                                                
+
+                                                
+
+                                                
+
+                                                
+
+{'loss': '0.7393', 'grad_norm': '2.699', 'learning_rate': '1.824e-05', 'epoch': '0.2778'}
+{'loss': '0.6917', 'grad_norm': '2.394', 'learning_rate': '1.731e-05', 'epoch': '0.4167'}
+{'loss': '0.7176', 'grad_norm': '0.8194', 'learning_rate': '1.639e-05', 'epoch': '0.5556'}
+{'loss': '0.7443', 'grad_norm': '9.493', 'learning_rate': '1.546e-05', 'epoch': '0.6944'}
+{'loss': '0.6991', 'grad_norm': '4.204', 'learning_rate': '1.454e-05', 'epoch': '0.8333'}
+{'loss': '0.7077', 'grad_norm': '0.7362', 'learning_rate': '1.361e-05', 'epoch': '0.9722'}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+                                               
+[A
+                                                
+
+
+
+                                               [A/Users/mulisamusehane/Documents/GitHub/MultilingualASR/.venv/lib/python3.12/site-packages/torch/utils/data/dataloader.py:759: UserWarning: 'pin_memory' argument is set as true but not supported on MPS now, device pinned memory won't be used.
+  super().__init__(loader)
+
+                                                
+
+                                                
+
+                                                 
+
+  warnings.warn('resource_tracker: There appear to be %d '

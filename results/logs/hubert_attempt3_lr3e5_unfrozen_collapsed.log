@@ -1,0 +1,221 @@
+AfriHuBERT pilot fine-tune | device: mps | train clips: 500 | eval clips: 100 | epochs: 6
+clip-length cap 10.0s: train 500->500, eval 100->98
+
+[transformers] [1mHubertForCTC LOAD REPORT[0m from: ajesujoba/AfriHuBERT
+Key            | Status  | 
+---------------+---------+-
+lm_head.weight | MISSING | 
+lm_head.bias   | MISSING | 
+
+Notes:
+- MISSING:	those params were newly initialized because missing from the checkpoint. Consider training on your downstream task.
+[transformers] warmup_ratio is deprecated and will be removed in v5.2. Use `warmup_steps` instead.
+
+  super().__init__(loader)
+/Users/mulisamusehane/Documents/GitHub/MultilingualASR/.venv/lib/python3.12/site-packages/torch/nn/functional.py:3159: UserWarning: The operator 'aten::_ctc_loss' is not currently supported on the MPS backend and will fall back to run on the CPU. This may have performance implications. (Triggered internally at /Users/runner/work/pytorch/pytorch/aten/src/ATen/mps/MPSFallback.mm:34.)
+  return torch.ctc_loss(
+
+                                                
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+                                                
+
+
+                                               
+[A
+
+
+                                               [A{'eval_loss': '12.88', 'eval_wer': '0.9668', 'eval_cer': '0.962', 'eval_runtime': '7.267', 'eval_samples_per_second': '13.49', 'eval_steps_per_second': '6.743', 'epoch': '1'}
+
+
+
+/Users/mulisamusehane/Documents/GitHub/MultilingualASR/.venv/lib/python3.12/site-packages/torch/utils/data/dataloader.py:759: UserWarning: 'pin_memory' argument is set as true but not supported on MPS now, device pinned memory won't be used.
+  super().__init__(loader)
+
+                                                
+
+                                                
+
+{'loss': '91.48', 'grad_norm': '250.4', 'learning_rate': '2.32e-05', 'epoch': '1.896'}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+                                                
+
+
+                                               
+[A
+
+
+                                               [A{'eval_loss': '10.46', 'eval_wer': '0.9668', 'eval_cer': '0.962', 'eval_runtime': '7.734', 'eval_samples_per_second': '12.67', 'eval_steps_per_second': '6.336', 'epoch': '2'}
+
+
+
+/Users/mulisamusehane/Documents/GitHub/MultilingualASR/.venv/lib/python3.12/site-packages/torch/utils/data/dataloader.py:759: UserWarning: 'pin_memory' argument is set as true but not supported on MPS now, device pinned memory won't be used.
+  super().__init__(loader)
+
+                                                
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+                                                
+
+
+                                               
+[A
+
+
+                                               [A{'eval_loss': '9.682', 'eval_wer': '0.9668', 'eval_cer': '0.962', 'eval_runtime': '8.098', 'eval_samples_per_second': '12.1', 'eval_steps_per_second': '6.051', 'epoch': '3'}
+
+
+
+
+                                                
+
+/Users/mulisamusehane/Documents/GitHub/MultilingualASR/.venv/lib/python3.12/site-packages/torch/utils/data/dataloader.py:759: UserWarning: 'pin_memory' argument is set as true but not supported on MPS now, device pinned memory won't be used.
+  super().__init__(loader)
+{'train_runtime': '598.1', 'train_samples_per_second': '5.016', 'train_steps_per_second': '0.321', 'train_loss': '110.9', 'epoch': '3'}
+
+
+== afrihubert pilot result ==
+eval WER: 0.967 | eval CER: 0.962
+(zero-shot Whisper Large v3 baseline on NCHLT test: WER 1.108, CER 0.763)
+(Wav2Vec2 pilot v2 on NCHLT test: WER 0.332, CER 0.074)
+
+model saved -> /Users/mulisamusehane/Documents/GitHub/MultilingualASR/results/hubert-ven-pilot/final

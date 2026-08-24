@@ -1,5 +1,105 @@
 # Tshivenda MPS Pilot Fine-Tune - Results
 
+## Whisper pilot v2 (rescoped) - best ASR result across every pilot
+
+`src/pilot_finetune_whisper_mps.py --resume-from results/whisper-ven-pilot/final
+--include-anv --epochs 5 --learning-rate 5e-5 --train-clips 12000 --eval-clips 500`,
+resumed from pilot v1's weights, 12,000 raw train clips (NCHLT + ANV, 7,325 kept
+after the 10s cap), 500 raw eval clips (430 kept), 5 epochs, M4 MacBook (MPS),
+~12.3h. Rescoped down from an aborted first attempt that tried the full
+60,087-clip pool and projected to ~51h (see `results/logs/README.md`).
+
+| Epoch | eval WER | eval CER |
+|---|---|---|
+| 1 | 0.296 | 0.078 |
+| 2 | 0.245 | 0.062 |
+| 3 | 0.206 | 0.055 |
+| 4 | 0.184 | 0.050 |
+| 5 (final) | **0.182** | **0.048** |
+
+Steady, clean improvement every epoch - no collapse. Comparison (200-clip
+NCHLT test set, seed 42):
+
+| Model | WER | CER |
+|---|---|---|
+| Whisper Large v3 zero-shot | 1.108 | 0.763 |
+| Wav2Vec2 pilot v2 (+ANV, 8 total epochs) | 0.332 | 0.074 |
+| Whisper pilot v1 (3 epochs, NCHLT only) | 0.265 | 0.060 |
+| **Whisper pilot v2 (rescoped, +ANV, resumed)** | **0.182** | **0.048** |
+
+Best result of any pilot run so far - beats pilot v1 by nearly 1/3 in WER,
+using the same scale of extra data (~7,300 clips) that took Wav2Vec2 from
+0.614 to 0.332. Model checkpoint saved to `results/whisper-ven-pilot-v2/final`
+(gitignored - re-run to regenerate). Full log:
+`results/logs/whisper_pilot_v2_wer0182.log`.
+
+## Whisper pilot v1 - works cleanly, best result so far
+
+`src/pilot_finetune_whisper_mps.py`, whisper-small, 5,000 NCHLT train clips
+(<= 10 s cap, 4,974 kept), 493 eval clips, 3 epochs, M4 MacBook (MPS).
+Placeholder language token "sw" (Swahili) used since Whisper has no `<|ven|>`
+token - see the module docstring for the reasoning. NOT the real Stage 1
+(whisper-large-v3, full data, GPU) - same proof-of-recipe role as the
+Wav2Vec2 pilots.
+
+| Epoch | eval WER | eval CER |
+|---|---|---|
+| 1 | 0.428 | 0.110 |
+| 2 | 0.281 | 0.064 |
+| 3 (final) | **0.265** | **0.060** |
+
+Steady, clean improvement every epoch - no collapse pattern (contrast with
+AfriHuBERT below, where WER/CER froze bit-for-bit across every attempt).
+Already beats Wav2Vec2 pilot v2 (WER 0.332, CER 0.074) despite fewer total
+epochs (3 vs. 8) and no ANV data in the mix - Whisper's pretraining is a
+much stronger starting point for this small a pilot. Full log:
+`results/logs/whisper_pilot_v1_wer0265.log`.
+
+## AfriHuBERT (third model attempt) - failed, total training collapse
+
+Attempted `ajesujoba/AfriHuBERT` as the third distinct ASR model family
+(Seani asked for 3 architecturally distinct models; Wav2Vec2 and Whisper are
+the other two). Confirmed via direct check it covers Tshivenda (1240
+language tags, `ven` included) and loads via standard `transformers`
+(`HubertForCTC`) - no extra toolkit needed, unlike the other candidate
+checked (ESPnet's XEUS, which does cover Tshivenda but is not
+`transformers`-native).
+
+**Result: fails to train.** Six systematic attempts (default hyperparameters,
+2x/3x lower learning rate, unfrozen feature encoder, 3x longer warmup,
+manual blank-bias correction, and a definitive 25-epoch run with early
+stopping disabled) all collapse into the model predicting a single dominant
+token for 100% of frames - first the CTC blank token, then (after the
+blank-bias fix) the single most frequent character instead. Loss decreases
+smoothly in every attempt while predictions never change, then visibly
+plateaus - ruling out "just needs more epochs." Confirmed by direct
+inspection of decoded predictions at every stage, not just inferred from a
+frozen WER number. Full evidence trail: `results/logs/README.md` and the six
+`results/logs/hubert_attempt*.log` files.
+
+**Decision (given the timeline): proceed with 2 model families - Wav2Vec2
+and Whisper.** AfriHuBERT stands as a documented, fully-evidenced failed
+attempt at a third family rather than an open thread to keep pulling on.
+`src/pilot_finetune_hubert_mps.py` and `notebooks/colab_hubert_ven.ipynb`
+stay in the repo in case debugging resumes later (e.g. on a real GPU, in
+case this is specific to the MPS/eager-attention fallback this machine
+required), but nothing further is planned against the current timeline.
+
+Message sent to Seani:
+
+> Update on the third model - AfriHuBERT covers Tshivenda and is cheap to
+> integrate, but it won't train: 6 different configurations all collapse
+> into predicting a single repeated token no matter what we change (lower
+> learning rate, unfreezing, longer warmup, a targeted fix for the collapse,
+> and a 25-epoch patience test that ruled out "just needs more time"). Fully
+> documented in the repo. Given the deadline, we're going with 2 model
+> families (Wav2Vec2 + Whisper) and documenting AfriHuBERT as an
+> attempted-but-failed third, with the full diagnostic trail as evidence of
+> the work. Let me know if you'd rather we pursue a different third model
+> instead (the only other one I found with confirmed Tshivenda coverage is
+> ESPnet's XEUS, but it needs a separate toolkit outside our current
+> pipeline, so it's a bigger time cost).
+
 ## Pilot v2 update
 
 v2: resumed from v1's weights, added ANV clips <= 10s to the mix (7,325 mixed

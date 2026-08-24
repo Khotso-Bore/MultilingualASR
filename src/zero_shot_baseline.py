@@ -1,7 +1,9 @@
 """Zero-shot ASR baseline for Tshivenda (Sub-question 1 "before" numbers).
 
 Transcribes preprocessed Tshivenda test clips with a pretrained Whisper model
-(no fine-tuning) and scores WER/CER with jiwer against the gold transcripts.
+(no fine-tuning) and scores WER, CER, MER (Match Error Rate), WIL (Word
+Information Lost), and WIP (Word Information Preserved) with jiwer against
+the gold transcripts - per Seani's request to report more than WER/CER.
 
 Notes on interpretation:
 - Whisper's language token set does NOT include Tshivenda, so the model runs
@@ -28,7 +30,7 @@ from pathlib import Path
 
 import soundfile as sf
 import torch
-from jiwer import cer, wer
+from jiwer import cer, process_words
 from transformers import pipeline
 
 import sys
@@ -76,12 +78,17 @@ def evaluate(model_name, limit, seed, n_examples, save_predictions=None):
 
         # jiwer cannot score an empty hypothesis string list-wide; keep pairs as-is,
         # empty hypotheses simply count as full deletions
-        corpus_wer = wer(refs, hyps)
+        word_metrics = process_words(refs, hyps)
+        corpus_wer = word_metrics.wer
+        corpus_mer = word_metrics.mer
+        corpus_wil = word_metrics.wil
+        corpus_wip = word_metrics.wip
         corpus_cer = cer(refs, hyps)
         empty_preds = sum(1 for h in hyps if not h)
         elapsed = time.time() - start
 
-        results[name] = {"wer": corpus_wer, "cer": corpus_cer, "n": len(sample),
+        results[name] = {"wer": corpus_wer, "cer": corpus_cer, "mer": corpus_mer,
+                         "wil": corpus_wil, "wip": corpus_wip, "n": len(sample),
                          "empty_preds": empty_preds, "seconds": elapsed}
 
         if save_predictions:
@@ -97,6 +104,7 @@ def evaluate(model_name, limit, seed, n_examples, save_predictions=None):
 
         print(f"\n== {name} ==")
         print(f"n={len(sample)}  WER={corpus_wer:.3f}  CER={corpus_cer:.3f}  "
+              f"MER={corpus_mer:.3f}  WIL={corpus_wil:.3f}  WIP={corpus_wip:.3f}  "
               f"empty predictions={empty_preds}  ({elapsed:.0f}s)")
         for ref, hyp in list(zip(refs, hyps))[:n_examples]:
             print(f"  ref: {ref}")
@@ -104,9 +112,10 @@ def evaluate(model_name, limit, seed, n_examples, save_predictions=None):
             print()
 
     print("== summary ==")
-    print(f"{'corpus':<14} {'n':>5} {'WER':>7} {'CER':>7}")
+    print(f"{'corpus':<14} {'n':>5} {'WER':>7} {'CER':>7} {'MER':>7} {'WIL':>7} {'WIP':>7}")
     for name, r in results.items():
-        print(f"{name:<14} {r['n']:>5} {r['wer']:>7.3f} {r['cer']:>7.3f}")
+        print(f"{name:<14} {r['n']:>5} {r['wer']:>7.3f} {r['cer']:>7.3f} "
+              f"{r['mer']:>7.3f} {r['wil']:>7.3f} {r['wip']:>7.3f}")
     return results
 
 
