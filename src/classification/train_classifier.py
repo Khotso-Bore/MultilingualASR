@@ -1,7 +1,7 @@
 """Fine-tune a Tshivenda misinformation classifier (proposal §4.5, Objective 4).
 
 Trains on dataset/vukuzenzele/misinfo_proxy_ven.csv - the synthetic real/fake
-proxy built by src/build_misinfo_proxy.py, standing in for the inaccessible
+proxy built by src/classification/build_misinfo_proxy.py, standing in for the inaccessible
 Mukwevho et al. (2024) dataset (see notes/tshivenda-classifier-proxy.md).
 
 With only 179 source articles (358 rows with their synthetic counterparts), a

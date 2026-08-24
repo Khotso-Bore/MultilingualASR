@@ -2,7 +2,7 @@
 
 Second half of the ASR comparison (Wav2Vec2 = contrastive CTC, Whisper =
 weakly-supervised encoder-decoder). Zero-shot Whisper Large v3 was already
-benchmarked (src/zero_shot_baseline.py); this is the actual fine-tuning that
+benchmarked (src/asr/zero_shot_baseline.py); this is the actual fine-tuning that
 was never built. Uses whisper-small for fast local pilot iteration - swap to
 openai/whisper-large-v3 for the real reported numbers (much slower, GPU
 recommended - see notebooks/colab_whisper_ven.ipynb once built).

@@ -13,7 +13,7 @@ government text (label = real).
 Synthetic "fake" counterparts are generated per real article by applying
 content-level distortions that mirror how real misinformation misrepresents
 genuine news, not ASR-style noise (that is a separate, already-built system -
-see src/corrupt_transcripts.py):
+see src/error_propagation/corrupt_transcripts.py):
 
 - numeric distortion: swap statistics/percentages/dates for different,
   differently-valued numbers drawn from elsewhere in the corpus

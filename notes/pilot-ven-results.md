@@ -169,5 +169,5 @@ From 400 saved ref/hyp pairs (results/preds_pilot/, gitignored):
 - Pilot only: small subset, short-clip cap, single corpus, few epochs.
 - Deletion-heavy ratio partly reflects degenerate merged-word output on long
   ANV clips; re-measure after Stage 1.
-- Regenerate predictions: src/evaluate_wav2vec2.py --checkpoint
+- Regenerate predictions: src/asr/evaluate_wav2vec2.py --checkpoint
   results/wav2vec2-ven-pilot/final --save-predictions results/preds_pilot
