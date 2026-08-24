@@ -2,7 +2,7 @@
 
 **Run count so far: 18 total training runs** (6 classifier, 2 Wav2Vec2 pilots,
 6 AfriHuBERT attempts, 4 Whisper runs - v1 done, an aborted v2 attempt,
-a rescoped v2 in progress). Updated as each new run finishes; every run
+a rescoped v2 done). Updated as each new run finishes; every run
 (success, failure, or abort) gets one entry here.
 
 Raw (progress-bar-stripped) console output from every training run, kept as
@@ -54,10 +54,14 @@ again.
    wildly out of proportion with Wav2Vec2's v1->v2 jump (6.5h for 7,325
    clips). Killed after ~1.4h (300/11,505 steps, no results to salvage) once
    the real step-rate revealed the scale problem.
-3. Whisper pilot v2, attempt 2 (rescoped) - in progress: same resume-from-v1
-   + ANV + 5-epoch recipe, but capped at `--train-clips 12000` raw (nets
-   ~7,300 clips after the 10s filter, matching Wav2Vec2 v2's scale). Log
-   will be added here as `whisper_pilot_v2_<result>.log` once it finishes.
+3. `whisper_pilot_v2_wer0182.log` - Whisper pilot v2, attempt 2 (rescoped):
+   same resume-from-v1 + ANV + 5-epoch recipe, capped at `--train-clips 12000`
+   raw (7,325 kept after the 10s filter, matching Wav2Vec2 v2's scale).
+   Steady improvement every epoch, no collapse: WER 0.296 -> 0.245 -> 0.206 ->
+   0.184 -> **0.182**, CER 0.078 -> 0.062 -> 0.055 -> 0.050 -> **0.048**. Best
+   ASR result across every pilot so far, beating Whisper pilot v1 (WER 0.265)
+   despite the aborted attempt 1. ~12.3h on the M4. See
+   `notes/pilot-ven-results.md`.
 
 ## AfriHuBERT pilot - failed, total CTC blank collapse
 

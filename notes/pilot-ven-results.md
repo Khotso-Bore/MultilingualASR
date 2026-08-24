@@ -1,5 +1,38 @@
 # Tshivenda MPS Pilot Fine-Tune - Results
 
+## Whisper pilot v2 (rescoped) - best ASR result across every pilot
+
+`src/pilot_finetune_whisper_mps.py --resume-from results/whisper-ven-pilot/final
+--include-anv --epochs 5 --learning-rate 5e-5 --train-clips 12000 --eval-clips 500`,
+resumed from pilot v1's weights, 12,000 raw train clips (NCHLT + ANV, 7,325 kept
+after the 10s cap), 500 raw eval clips (430 kept), 5 epochs, M4 MacBook (MPS),
+~12.3h. Rescoped down from an aborted first attempt that tried the full
+60,087-clip pool and projected to ~51h (see `results/logs/README.md`).
+
+| Epoch | eval WER | eval CER |
+|---|---|---|
+| 1 | 0.296 | 0.078 |
+| 2 | 0.245 | 0.062 |
+| 3 | 0.206 | 0.055 |
+| 4 | 0.184 | 0.050 |
+| 5 (final) | **0.182** | **0.048** |
+
+Steady, clean improvement every epoch - no collapse. Comparison (200-clip
+NCHLT test set, seed 42):
+
+| Model | WER | CER |
+|---|---|---|
+| Whisper Large v3 zero-shot | 1.108 | 0.763 |
+| Wav2Vec2 pilot v2 (+ANV, 8 total epochs) | 0.332 | 0.074 |
+| Whisper pilot v1 (3 epochs, NCHLT only) | 0.265 | 0.060 |
+| **Whisper pilot v2 (rescoped, +ANV, resumed)** | **0.182** | **0.048** |
+
+Best result of any pilot run so far - beats pilot v1 by nearly 1/3 in WER,
+using the same scale of extra data (~7,300 clips) that took Wav2Vec2 from
+0.614 to 0.332. Model checkpoint saved to `results/whisper-ven-pilot-v2/final`
+(gitignored - re-run to regenerate). Full log:
+`results/logs/whisper_pilot_v2_wer0182.log`.
+
 ## Whisper pilot v1 - works cleanly, best result so far
 
 `src/pilot_finetune_whisper_mps.py`, whisper-small, 5,000 NCHLT train clips
