@@ -2,7 +2,7 @@
 
 ## Whisper pilot v2 (rescoped) - best ASR result across every pilot
 
-`src/pilot_finetune_whisper_mps.py --resume-from results/whisper-ven-pilot/final
+`src/asr/pilot_finetune_whisper_mps.py --resume-from results/whisper-ven-pilot/final
 --include-anv --epochs 5 --learning-rate 5e-5 --train-clips 12000 --eval-clips 500`,
 resumed from pilot v1's weights, 12,000 raw train clips (NCHLT + ANV, 7,325 kept
 after the 10s cap), 500 raw eval clips (430 kept), 5 epochs, M4 MacBook (MPS),
@@ -35,7 +35,7 @@ using the same scale of extra data (~7,300 clips) that took Wav2Vec2 from
 
 ## Whisper pilot v1 - works cleanly, best result so far
 
-`src/pilot_finetune_whisper_mps.py`, whisper-small, 5,000 NCHLT train clips
+`src/asr/pilot_finetune_whisper_mps.py`, whisper-small, 5,000 NCHLT train clips
 (<= 10 s cap, 4,974 kept), 493 eval clips, 3 epochs, M4 MacBook (MPS).
 Placeholder language token "sw" (Swahili) used since Whisper has no `<|ven|>`
 token - see the module docstring for the reasoning. NOT the real Stage 1
@@ -80,7 +80,7 @@ frozen WER number. Full evidence trail: `results/logs/README.md` and the six
 **Decision (given the timeline): proceed with 2 model families - Wav2Vec2
 and Whisper.** AfriHuBERT stands as a documented, fully-evidenced failed
 attempt at a third family rather than an open thread to keep pulling on.
-`src/pilot_finetune_hubert_mps.py` and `notebooks/colab_hubert_ven.ipynb`
+`src/asr/pilot_finetune_hubert_mps.py` and `notebooks/asr/colab_hubert_ven.ipynb`
 stay in the repo in case debugging resumes later (e.g. on a real GPU, in
 case this is specific to the MPS/eager-attention fallback this machine
 required), but nothing further is planned against the current timeline.
