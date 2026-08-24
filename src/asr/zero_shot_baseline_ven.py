@@ -13,13 +13,13 @@ Notes on interpretation:
 - Wav2Vec2 XLS-R has no Tshivenda CTC head, so it has no meaningful zero-shot
   mode; this baseline is Whisper-only by design.
 - Model predictions are passed through the same normalisation as the training
-  transcripts (src/text_norm.py) before scoring, so WER is not inflated by
+  transcripts (src/text_norm_ven.py) before scoring, so WER is not inflated by
   punctuation/casing that Whisper adds.
 
 Usage:
-    python src/zero_shot_baseline.py                          # whisper-small, 200/corpus
-    python src/zero_shot_baseline.py --limit 20               # quick check
-    python src/zero_shot_baseline.py --model openai/whisper-large-v3
+    python src/asr/zero_shot_baseline_ven.py                          # whisper-small, 200/corpus
+    python src/asr/zero_shot_baseline_ven.py --limit 20               # quick check
+    python src/asr/zero_shot_baseline_ven.py --model openai/whisper-large-v3
 """
 
 import argparse
@@ -34,10 +34,10 @@ from jiwer import cer, process_words
 from transformers import pipeline
 
 import sys
-sys.path.insert(0, str(Path(__file__).resolve().parent))
-from text_norm import normalize_transcript
+sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
+from text_norm_ven import normalize_transcript
 
-REPO_ROOT = Path(__file__).resolve().parents[1]
+REPO_ROOT = Path(__file__).resolve().parents[2]
 
 EVAL_SETS = {
     "nchlt_test": REPO_ROOT / "dataset" / "processed" / "nchlt_ven" / "test.csv",

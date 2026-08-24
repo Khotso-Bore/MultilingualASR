@@ -10,14 +10,14 @@ The tokenizer is saved to tokenizers/ven/ and committed - it is tiny, and the
 whole team must use an identical vocab for WER numbers to be comparable.
 
 Usage:
-    python src/build_tokenizer.py
+    python src/preprocessing/build_tokenizer_ven.py
 """
 
 import csv
 import json
 from pathlib import Path
 
-REPO_ROOT = Path(__file__).resolve().parents[1]
+REPO_ROOT = Path(__file__).resolve().parents[2]
 TRAIN_CSVS = [
     REPO_ROOT / "dataset" / "processed" / "nchlt_ven" / "train.csv",
     REPO_ROOT / "dataset" / "processed" / "anv_ven" / "train.csv",

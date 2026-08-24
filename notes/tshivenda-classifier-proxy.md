@@ -5,10 +5,13 @@
 The proposal's Tshivenda sub-study (§4.5) specifies fine-tuning the
 misinformation classifier on the Mukwevho et al. (2024) dataset - 23
 labeled Tshivenda news articles, referenced throughout the proposal as the
-GRU-baseline comparison point. That dataset is confirmed unavailable to this
-team: it was never publicly released (the paper itself states the source is
-"undisclosed"), it is not on the DSFSI public dataset registry, Hugging Face,
-or GitHub, and the authors could not provide it on request.
+GRU-baseline comparison point. That dataset is confirmed permanently
+unavailable: it was never publicly released (the paper itself states the
+source is "undisclosed"), it is not on the DSFSI public dataset registry,
+Hugging Face, or GitHub, and - per Dr Rananga directly (2026-08-24) - Mukwevho
+has misplaced it. Not a temporary access issue; there is no dataset
+left to request. Dr Rananga's guidance: proceed with the synthetic proxy
+route as the permanent approach, not a stand-in pending the original.
 
 The proposal already anticipates exactly this situation for the other two
 languages - §3.2: *"For Setswana and Sepedi, no dedicated misinformation
@@ -24,7 +27,7 @@ constructed rather than found.
 
 ## What was built
 
-`src/build_misinfo_proxy.py` takes the 184 Tshivenda articles already in the
+`src/classification/build_misinfo_proxy_ven.py` takes the 184 Tshivenda articles already in the
 repo (`dataset/vukuzenzele/`, the DSFSI Vukuzenzele government-magazine
 corpus, CC-BY-4.0) and constructs a balanced real/fake classification task:
 
@@ -62,14 +65,16 @@ Result: 358 rows (179 real + 179 synthetic fake), saved to
    misinformation in general - a real limitation of the proxy, same as the
    news-topic-classification proxies already used for Setswana/Sepedi are
    not really "misinformation" tasks either.
-2. **No comparison to the Mukwevho GRU baseline is possible** - that
-   requires the original dataset. Objective 4's "compared to existing
-   text-only baselines" is satisfied by comparing AfroXLM-RoBERTa against
-   XLM-RoBERTa on this proxy instead, not against Mukwevho's GRU.
+2. **No comparison to the Mukwevho GRU baseline is possible, permanently**
+   - the original dataset is lost, not just inaccessible (confirmed by
+   Dr Rananga, 2026-08-24). Objective 4's "compared to existing text-only
+   baselines" is satisfied by comparing AfroXLM-RoBERTa against XLM-RoBERTa
+   on this proxy instead, not against Mukwevho's GRU - and that comparison
+   is now the permanent one for this sub-study, not an interim substitute.
 3. **Small source pool**: only 179 unique articles, all formal government
    register (Vukuzenzele), none of the informal/social-media register real
    misinformation typically appears in. Addressed as best possible via
-   grouped 5-fold cross-validation (`src/train_classifier.py`) rather than a
+   grouped 5-fold cross-validation (`src/classification/train_classifier_ven.py`) rather than a
    single train/test split, so reported numbers are a mean +/- std across
    folds, not one noisy point estimate.
 4. **Cannot be un-flagged without supervisor sign-off.** This substitution
@@ -111,10 +116,10 @@ A genuinely useful, literature-consistent result for the report.
 ## How to regenerate / retrain
 
 ```bash
-python src/build_misinfo_proxy.py                                       # rebuild the proxy dataset
-python src/train_classifier.py --model Davlan/afro-xlmr-base \
+python src/classification/build_misinfo_proxy_ven.py                                       # rebuild the proxy dataset
+python src/classification/train_classifier_ven.py --model Davlan/afro-xlmr-base \
     --folds 5 --epochs 15 --learning-rate 1e-3 --freeze-base             # primary
-python src/train_classifier.py --model xlm-roberta-base \
+python src/classification/train_classifier_ven.py --model xlm-roberta-base \
     --folds 5 --epochs 15 --learning-rate 1e-3 --freeze-base             # comparison
 ```
 

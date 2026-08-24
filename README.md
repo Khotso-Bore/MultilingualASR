@@ -16,20 +16,46 @@ Supervisors: Seani Rananga, Mahlatse Mbooi
 
 ## Repo structure
 
+Each language sub-study gets its own scripts/notebooks under the same
+pipeline-stage grouping; the Tshivenda track (the most complete so far) looks
+like this:
+
 ```
-dataset/                    # untouched, as originally set up
-  get_dataset.py              # pulls audio metadata (NCHLT, African Next Voices) from HF into CSVs
-  dsfsi-anv/
-    nchlt/                      # per-language NCHLT metadata CSVs
-    anv/                        # per-language African Next Voices metadata CSVs
-notebooks/                  # exploratory notebooks
-  notebook.ipynb               # streaming-sample EDA pattern
-  za_next_voices_eda.ipynb     # fuller EDA + plots
+dataset/                     # untouched, as originally set up
+  get_dataset.py                # pulls audio metadata (NCHLT, African Next Voices) from HF into CSVs
+  dsfsi-anv/                    # per-language NCHLT / African Next Voices metadata CSVs
+  processed/                    # regeneratable preprocessed CSVs + audio (gitignored)
+
+src/                          # reusable pipeline code, grouped by stage
+  text_norm_ven.py                   # shared Tshivenda text normalisation - used across every stage below
+  preprocessing/                 # NCHLT/ANV -> processed CSVs, CTC tokenizer
+  asr/                           # Wav2Vec2 / Whisper / AfriHuBERT pilots, zero-shot baseline, checkpoint eval
+  classification/                # misinformation-classifier proxy dataset + training
+  error_propagation/             # controlled-WER transcript corruption (§4.6 study)
+
+notebooks/                    # thin wrappers around src/ for local iteration, plus Colab bootstrap notebooks
+  notebook.ipynb                 # pre-language-split streaming-sample EDA
+  za_next_voices_eda.ipynb       # pre-language-split fuller EDA + plots
+  finetune_wav2vec2.ipynb        # Khotso's generic Setswana smoke-test template
+  preprocessing/ asr/ classification/ error_propagation/   # mirrors src/ above
+
+tokenizers/ven/                # committed custom CTC tokenizer (Tshivenda's 32-character set)
+
+notes/                         # narrative write-ups of what was tried and why - read these first
+  pilot-ven-results.md            # ASR pilot results (Wav2Vec2, Whisper, AfriHuBERT) and the Mukwevho-dataset situation
+  tshivenda-classifier-proxy.md   # misinformation-classifier proxy dataset rationale + results
+
+results/
+  logs/                          # tracked: raw output from every training run (success, failure, or abort)
+    README.md                      # full run count and index - the evidence trail behind notes/
+  *                              # everything else here is gitignored (model checkpoints, predictions - regeneratable)
+
 requirements.txt
 README.md
 ```
 
-As new pipeline stages start, add a `src/` folder for reusable pipeline code (e.g. `src/asr/` for Wav2Vec 2.0 / Whisper fine-tuning, `src/classification/` for the misinformation classifiers, `src/error_propagation/` for the WER degradation analysis) and a `configs/` folder for per-experiment configs. `dataset/` stays as-is; new code and data folders get added alongside it rather than renaming or moving what is already there. No dedicated `tests/` folder for now. Experiment outputs (logs, per-run metrics, plots) stay local and gitignored (`results/`); only pull specific numbers into the report or a committed summary when they matter.
+No dedicated `configs/` or `tests/` folder yet - add them the same way, alongside
+what already exists rather than restructuring around them.
 
 ## Setup
 
@@ -101,6 +127,7 @@ Branch types:
 | `experiment/` | Exploratory work / model trials that may not land as-is (e.g. `experiment/xlsr53-vs-xlsr300m`) |
 | `docs/` | Documentation only (e.g. `docs/readme-update`) |
 | `data/` | Dataset acquisition/preprocessing changes (e.g. `data/swivuriso-vad`) |
+| `refactor/` | Restructuring existing code/files without changing behaviour (e.g. `refactor/tshivenda-repo-structure`) |
 
 Keep branches scoped to one piece of work.
 

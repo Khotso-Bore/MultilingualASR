@@ -9,7 +9,7 @@ Per the Tshivenda EDA findings (notebooks/za_next_voices_eda.ipynb):
   (WebRTC VAD) into 5-30 s windows written WITHOUT transcripts to
   segments.csv, for later forced alignment or unsupervised use.
 - SNR needs no filtering (minimum in the corpus is 30 dB).
-- Transcripts are normalised with src/text_norm.py.
+- Transcripts are normalised with src/text_norm_ven.py.
 
 Output: dataset/processed/anv_ven/<split>.csv with columns
     audio       absolute path to the 16 kHz wav (under dataset/processed/anv_ven/)
@@ -19,9 +19,9 @@ Note: this dataset is gated on Hugging Face - run `hf auth login` and accept
 the terms on the dataset page first.
 
 Usage:
-    python src/preprocess_anv.py                  # full run (tens of GB)
-    python src/preprocess_anv.py --limit 5        # quick verification subset
-    python src/preprocess_anv.py --segment-long   # also VAD-segment >30s clips
+    python src/preprocessing/preprocess_anv_ven.py                  # full run (tens of GB)
+    python src/preprocessing/preprocess_anv_ven.py --limit 5        # quick verification subset
+    python src/preprocessing/preprocess_anv_ven.py --segment-long   # also VAD-segment >30s clips
 """
 
 import argparse
@@ -33,10 +33,10 @@ import soundfile as sf
 from datasets import Audio, load_dataset
 
 import sys
-sys.path.insert(0, str(Path(__file__).resolve().parent))
-from text_norm import normalize_transcript
+sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
+from text_norm_ven import normalize_transcript
 
-REPO_ROOT = Path(__file__).resolve().parents[1]
+REPO_ROOT = Path(__file__).resolve().parents[2]
 OUT_DIR = REPO_ROOT / "dataset" / "processed" / "anv_ven"
 
 DATASET = "dsfsi-anv/za-african-next-voices-compressed"

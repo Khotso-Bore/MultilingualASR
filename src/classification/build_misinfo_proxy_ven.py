@@ -13,7 +13,7 @@ government text (label = real).
 Synthetic "fake" counterparts are generated per real article by applying
 content-level distortions that mirror how real misinformation misrepresents
 genuine news, not ASR-style noise (that is a separate, already-built system -
-see src/corrupt_transcripts.py):
+see src/error_propagation/corrupt_transcripts_ven.py):
 
 - numeric distortion: swap statistics/percentages/dates for different,
   differently-valued numbers drawn from elsewhere in the corpus
@@ -32,8 +32,8 @@ This is a proxy, not organic misinformation, and the paper/report must state
 that plainly - see notes/tshivenda-classifier-proxy.md.
 
 Usage:
-    python src/build_misinfo_proxy.py
-    python src/build_misinfo_proxy.py --seed 7 --output /tmp/proxy.csv
+    python src/classification/build_misinfo_proxy_ven.py
+    python src/classification/build_misinfo_proxy_ven.py --seed 7 --output /tmp/proxy.csv
 """
 
 import argparse
@@ -43,7 +43,7 @@ from pathlib import Path
 
 import pandas as pd
 
-REPO_ROOT = Path(__file__).resolve().parents[1]
+REPO_ROOT = Path(__file__).resolve().parents[2]
 INPUT_CSV = REPO_ROOT / "dataset" / "vukuzenzele" / "vukuzenzele-monolingual_ven.csv"
 OUTPUT_CSV = REPO_ROOT / "dataset" / "vukuzenzele" / "misinfo_proxy_ven.csv"
 
