@@ -1,7 +1,7 @@
 # Run Logs
 
-**Run count so far: 18 total training runs** (6 classifier, 2 Wav2Vec2 pilots,
-6 AfriHuBERT attempts, 4 Whisper runs - v1 done, an aborted v2 attempt,
+**Run count so far: 17 total training runs** (6 classifier, 2 Wav2Vec2 pilots,
+6 AfriHuBERT attempts, 3 Whisper runs - v1 done, an aborted v2 attempt,
 a rescoped v2 done). Updated as each new run finishes; every run
 (success, failure, or abort) gets one entry here.
 
