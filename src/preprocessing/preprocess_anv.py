@@ -19,9 +19,9 @@ Note: this dataset is gated on Hugging Face - run `hf auth login` and accept
 the terms on the dataset page first.
 
 Usage:
-    python src/preprocess_anv.py                  # full run (tens of GB)
-    python src/preprocess_anv.py --limit 5        # quick verification subset
-    python src/preprocess_anv.py --segment-long   # also VAD-segment >30s clips
+    python src/preprocessing/preprocess_anv.py                  # full run (tens of GB)
+    python src/preprocessing/preprocess_anv.py --limit 5        # quick verification subset
+    python src/preprocessing/preprocess_anv.py --segment-long   # also VAD-segment >30s clips
 """
 
 import argparse
@@ -33,10 +33,10 @@ import soundfile as sf
 from datasets import Audio, load_dataset
 
 import sys
-sys.path.insert(0, str(Path(__file__).resolve().parent))
+sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 from text_norm import normalize_transcript
 
-REPO_ROOT = Path(__file__).resolve().parents[1]
+REPO_ROOT = Path(__file__).resolve().parents[2]
 OUT_DIR = REPO_ROOT / "dataset" / "processed" / "anv_ven"
 
 DATASET = "dsfsi-anv/za-african-next-voices-compressed"

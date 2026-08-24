@@ -17,9 +17,9 @@ load time (cast_column on a string column is not supported):
     load_dataset("csv", data_files={...}, features=features)
 
 Usage:
-    python src/preprocess_nchlt.py                 # full run (~6.3 GB download)
-    python src/preprocess_nchlt.py --limit 30      # quick verification subset
-    python src/preprocess_nchlt.py --splits train  # single split
+    python src/preprocessing/preprocess_nchlt.py                 # full run (~6.3 GB download)
+    python src/preprocessing/preprocess_nchlt.py --limit 30      # quick verification subset
+    python src/preprocessing/preprocess_nchlt.py --splits train  # single split
 """
 
 import argparse
@@ -30,10 +30,10 @@ import soundfile as sf
 from datasets import load_dataset
 
 import sys
-sys.path.insert(0, str(Path(__file__).resolve().parent))
+sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 from text_norm import normalize_transcript
 
-REPO_ROOT = Path(__file__).resolve().parents[1]
+REPO_ROOT = Path(__file__).resolve().parents[2]
 RAW_DIR = REPO_ROOT / "dataset" / "raw" / "nchlt_ven"
 OUT_DIR = REPO_ROOT / "dataset" / "processed" / "nchlt_ven"
 

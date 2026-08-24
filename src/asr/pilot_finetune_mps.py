@@ -12,7 +12,7 @@ run with PYTORCH_ENABLE_MPS_FALLBACK=1 (loss computes on CPU; the encoder,
 which dominates compute, stays on the GPU).
 
 Usage:
-    PYTORCH_ENABLE_MPS_FALLBACK=1 python src/pilot_finetune_mps.py
+    PYTORCH_ENABLE_MPS_FALLBACK=1 python src/asr/pilot_finetune_mps.py
     ... --train-clips 50 --eval-clips 20 --epochs 1   # smoke test
 """
 
@@ -35,7 +35,7 @@ from transformers import (
 import sys
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 
-REPO_ROOT = Path(__file__).resolve().parents[1]
+REPO_ROOT = Path(__file__).resolve().parents[2]
 DATA = REPO_ROOT / "dataset" / "processed"
 TOKENIZER_DIR = REPO_ROOT / "tokenizers" / "ven"
 OUTPUT_DIR = REPO_ROOT / "results" / "wav2vec2-ven-pilot"

@@ -21,10 +21,10 @@ usable ASR system). Measure the real ratio from fine-tuned model output later
 via zero_shot_baseline.py --save-predictions and pass it with --error-model.
 
 Usage:
-    python src/corrupt_transcripts.py --input dataset/processed/nchlt_ven/test.csv \
+    python src/error_propagation/corrupt_transcripts.py --input dataset/processed/nchlt_ven/test.csv \
         --target-wer 0.3 --mode mixed --seed 42 --output /tmp/corrupted_30.csv
-    python src/corrupt_transcripts.py ... --mode substitution   # ablation
-    python src/corrupt_transcripts.py ... --error-model results/zero_shot/large-v3_nchlt_test.csv
+    python src/error_propagation/corrupt_transcripts.py ... --mode substitution   # ablation
+    python src/error_propagation/corrupt_transcripts.py ... --error-model results/zero_shot/large-v3_nchlt_test.csv
 """
 
 import argparse

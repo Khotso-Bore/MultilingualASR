@@ -16,9 +16,9 @@ Models (proposal primary + comparison):
     xlm-roberta-base        (comparison baseline)
 
 Usage:
-    python src/train_classifier.py --model Davlan/afro-xlmr-base
-    python src/train_classifier.py --model xlm-roberta-base --folds 5
-    python src/train_classifier.py --model Davlan/afro-xlmr-base --folds 2 --epochs 1  # smoke test
+    python src/classification/train_classifier.py --model Davlan/afro-xlmr-base
+    python src/classification/train_classifier.py --model xlm-roberta-base --folds 5
+    python src/classification/train_classifier.py --model Davlan/afro-xlmr-base --folds 2 --epochs 1  # smoke test
 """
 
 import argparse
@@ -37,7 +37,7 @@ from transformers import (
     TrainingArguments,
 )
 
-REPO_ROOT = Path(__file__).resolve().parents[1]
+REPO_ROOT = Path(__file__).resolve().parents[2]
 DATA_CSV = REPO_ROOT / "dataset" / "vukuzenzele" / "misinfo_proxy_ven.csv"
 RESULTS_DIR = REPO_ROOT / "results" / "classifier"
 

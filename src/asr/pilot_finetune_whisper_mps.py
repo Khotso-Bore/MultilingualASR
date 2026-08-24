@@ -20,7 +20,7 @@ fine (general BPE, not a fixed small vocab) - no custom tokenizer needed,
 unlike tokenizers/ven/ built for the CTC models.
 
 Usage:
-    python src/pilot_finetune_whisper_mps.py
+    python src/asr/pilot_finetune_whisper_mps.py
     ... --train-clips 50 --eval-clips 20 --epochs 1   # smoke test
 """
 
@@ -38,7 +38,7 @@ from transformers import (
     WhisperProcessor,
 )
 
-REPO_ROOT = Path(__file__).resolve().parents[1]
+REPO_ROOT = Path(__file__).resolve().parents[2]
 DATA = REPO_ROOT / "dataset" / "processed"
 OUTPUT_DIR = REPO_ROOT / "results" / "whisper-ven-pilot"
 PLACEHOLDER_LANGUAGE = "sw"  # Swahili token as a Tshivenda placeholder - see module docstring
