@@ -2,7 +2,7 @@
 
 ## Whisper pilot v2 (rescoped) - best ASR result across every pilot
 
-`src/asr/pilot_finetune_whisper_mps.py --resume-from results/whisper-ven-pilot/final
+`src/asr/pilot_finetune_whisper_mps_ven.py --resume-from results/whisper-ven-pilot/final
 --include-anv --epochs 5 --learning-rate 5e-5 --train-clips 12000 --eval-clips 500`,
 resumed from pilot v1's weights, 12,000 raw train clips (NCHLT + ANV, 7,325 kept
 after the 10s cap), 500 raw eval clips (430 kept), 5 epochs, M4 MacBook (MPS),
@@ -35,7 +35,7 @@ using the same scale of extra data (~7,300 clips) that took Wav2Vec2 from
 
 ## Whisper pilot v1 - works cleanly, best result so far
 
-`src/asr/pilot_finetune_whisper_mps.py`, whisper-small, 5,000 NCHLT train clips
+`src/asr/pilot_finetune_whisper_mps_ven.py`, whisper-small, 5,000 NCHLT train clips
 (<= 10 s cap, 4,974 kept), 493 eval clips, 3 epochs, M4 MacBook (MPS).
 Placeholder language token "sw" (Swahili) used since Whisper has no `<|ven|>`
 token - see the module docstring for the reasoning. NOT the real Stage 1
@@ -160,7 +160,7 @@ From 400 saved ref/hyp pairs (results/preds_pilot/, gitignored):
 
 - S:D:I ratio = **49.5 : 49.3 : 1.3** (vs the corruption engine's assumed
   60:25:15 default) - real errors are far more deletion-heavy, insertions
-  nearly absent. Use via corrupt_transcripts.py --error-model.
+  nearly absent. Use via corrupt_transcripts_ven.py --error-model.
 - Top confusion pairs are linguistically plausible: nṋe->ne, zwine->zine,
   hu<->u, wana->wa (diacritic loss and cluster simplification dominate).
 
@@ -169,5 +169,5 @@ From 400 saved ref/hyp pairs (results/preds_pilot/, gitignored):
 - Pilot only: small subset, short-clip cap, single corpus, few epochs.
 - Deletion-heavy ratio partly reflects degenerate merged-word output on long
   ANV clips; re-measure after Stage 1.
-- Regenerate predictions: src/asr/evaluate_wav2vec2.py --checkpoint
+- Regenerate predictions: src/asr/evaluate_wav2vec2_ven.py --checkpoint
   results/wav2vec2-ven-pilot/final --save-predictions results/preds_pilot

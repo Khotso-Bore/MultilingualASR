@@ -27,7 +27,7 @@ dataset/                     # untouched, as originally set up
   processed/                    # regeneratable preprocessed CSVs + audio (gitignored)
 
 src/                          # reusable pipeline code, grouped by stage
-  text_norm.py                   # shared Tshivenda text normalisation - used across every stage below
+  text_norm_ven.py                   # shared Tshivenda text normalisation - used across every stage below
   preprocessing/                 # NCHLT/ANV -> processed CSVs, CTC tokenizer
   asr/                           # Wav2Vec2 / Whisper / AfriHuBERT pilots, zero-shot baseline, checkpoint eval
   classification/                # misinformation-classifier proxy dataset + training

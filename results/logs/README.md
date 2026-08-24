@@ -120,7 +120,7 @@ solution, not resolved by six systematic attempts (default config, 2x lower
 LR, unfrozen encoder, 3x longer warmup, blank-bias correction, and disabled
 early stopping across 25 epochs) within the project timeline. Root cause
 confirmed by direct inspection of decoded predictions at every stage, not
-just inferred from WER. `src/asr/pilot_finetune_hubert_mps.py` and
+just inferred from WER. `src/asr/pilot_finetune_hubert_mps_ven.py` and
 `notebooks/asr/colab_hubert_ven.ipynb` are kept in the repo (with the diagnostic
 flags added during this investigation: `--unfreeze-feature-encoder`,
 `--warmup-ratio`, `--disfavor-blank-init`, `--blank-bias-penalty`,

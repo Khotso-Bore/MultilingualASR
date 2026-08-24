@@ -24,7 +24,7 @@ constructed rather than found.
 
 ## What was built
 
-`src/classification/build_misinfo_proxy.py` takes the 184 Tshivenda articles already in the
+`src/classification/build_misinfo_proxy_ven.py` takes the 184 Tshivenda articles already in the
 repo (`dataset/vukuzenzele/`, the DSFSI Vukuzenzele government-magazine
 corpus, CC-BY-4.0) and constructs a balanced real/fake classification task:
 
@@ -69,7 +69,7 @@ Result: 358 rows (179 real + 179 synthetic fake), saved to
 3. **Small source pool**: only 179 unique articles, all formal government
    register (Vukuzenzele), none of the informal/social-media register real
    misinformation typically appears in. Addressed as best possible via
-   grouped 5-fold cross-validation (`src/classification/train_classifier.py`) rather than a
+   grouped 5-fold cross-validation (`src/classification/train_classifier_ven.py`) rather than a
    single train/test split, so reported numbers are a mean +/- std across
    folds, not one noisy point estimate.
 4. **Cannot be un-flagged without supervisor sign-off.** This substitution
@@ -111,10 +111,10 @@ A genuinely useful, literature-consistent result for the report.
 ## How to regenerate / retrain
 
 ```bash
-python src/classification/build_misinfo_proxy.py                                       # rebuild the proxy dataset
-python src/classification/train_classifier.py --model Davlan/afro-xlmr-base \
+python src/classification/build_misinfo_proxy_ven.py                                       # rebuild the proxy dataset
+python src/classification/train_classifier_ven.py --model Davlan/afro-xlmr-base \
     --folds 5 --epochs 15 --learning-rate 1e-3 --freeze-base             # primary
-python src/classification/train_classifier.py --model xlm-roberta-base \
+python src/classification/train_classifier_ven.py --model xlm-roberta-base \
     --folds 5 --epochs 15 --learning-rate 1e-3 --freeze-base             # comparison
 ```
 
