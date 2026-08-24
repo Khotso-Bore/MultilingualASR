@@ -2,7 +2,7 @@
 
 Second half of the ASR comparison (Wav2Vec2 = contrastive CTC, Whisper =
 weakly-supervised encoder-decoder). Zero-shot Whisper Large v3 was already
-benchmarked (src/asr/zero_shot_baseline.py); this is the actual fine-tuning that
+benchmarked (src/asr/zero_shot_baseline_ven.py); this is the actual fine-tuning that
 was never built. Uses whisper-small for fast local pilot iteration - swap to
 openai/whisper-large-v3 for the real reported numbers (much slower, GPU
 recommended - see notebooks/colab_whisper_ven.ipynb once built).
@@ -20,7 +20,7 @@ fine (general BPE, not a fixed small vocab) - no custom tokenizer needed,
 unlike tokenizers/ven/ built for the CTC models.
 
 Usage:
-    python src/asr/pilot_finetune_whisper_mps.py
+    python src/asr/pilot_finetune_whisper_mps_ven.py
     ... --train-clips 50 --eval-clips 20 --epochs 1   # smoke test
 """
 

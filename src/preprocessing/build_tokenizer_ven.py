@@ -10,7 +10,7 @@ The tokenizer is saved to tokenizers/ven/ and committed - it is tiny, and the
 whole team must use an identical vocab for WER numbers to be comparable.
 
 Usage:
-    python src/preprocessing/build_tokenizer.py
+    python src/preprocessing/build_tokenizer_ven.py
 """
 
 import csv

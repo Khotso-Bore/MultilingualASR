@@ -7,9 +7,9 @@ same eval sets (NCHLT test, ANV dev_test), same sampling (--limit clips,
 comparable across every model in the comparison (Whisper, Wav2Vec2, AfriHuBERT).
 
 Usage:
-    python src/asr/evaluate_wav2vec2.py --checkpoint results/wav2vec2-ven-pilot/final \
+    python src/asr/evaluate_wav2vec2_ven.py --checkpoint results/wav2vec2-ven-pilot/final \
         --save-predictions results/preds_pilot
-    python src/asr/evaluate_wav2vec2.py --checkpoint results/hubert-ven-pilot/final
+    python src/asr/evaluate_wav2vec2_ven.py --checkpoint results/hubert-ven-pilot/final
 """
 
 import argparse
@@ -26,8 +26,8 @@ from transformers import AutoModelForCTC, Wav2Vec2Processor
 import sys
 sys.path.insert(0, str(Path(__file__).resolve().parent))       # sibling: zero_shot_baseline.py
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))   # src/: text_norm.py
-from text_norm import normalize_transcript
-from zero_shot_baseline import EVAL_SETS, pick_device
+from text_norm_ven import normalize_transcript
+from zero_shot_baseline_ven import EVAL_SETS, pick_device
 
 
 def evaluate(checkpoint, limit, seed, n_examples, save_predictions=None):

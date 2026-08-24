@@ -1,7 +1,7 @@
 """Fine-tune a Tshivenda misinformation classifier (proposal §4.5, Objective 4).
 
 Trains on dataset/vukuzenzele/misinfo_proxy_ven.csv - the synthetic real/fake
-proxy built by src/classification/build_misinfo_proxy.py, standing in for the inaccessible
+proxy built by src/classification/build_misinfo_proxy_ven.py, standing in for the inaccessible
 Mukwevho et al. (2024) dataset (see notes/tshivenda-classifier-proxy.md).
 
 With only 179 source articles (358 rows with their synthetic counterparts), a
@@ -16,9 +16,9 @@ Models (proposal primary + comparison):
     xlm-roberta-base        (comparison baseline)
 
 Usage:
-    python src/classification/train_classifier.py --model Davlan/afro-xlmr-base
-    python src/classification/train_classifier.py --model xlm-roberta-base --folds 5
-    python src/classification/train_classifier.py --model Davlan/afro-xlmr-base --folds 2 --epochs 1  # smoke test
+    python src/classification/train_classifier_ven.py --model Davlan/afro-xlmr-base
+    python src/classification/train_classifier_ven.py --model xlm-roberta-base --folds 5
+    python src/classification/train_classifier_ven.py --model Davlan/afro-xlmr-base --folds 2 --epochs 1  # smoke test
 """
 
 import argparse
