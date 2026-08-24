@@ -8,7 +8,7 @@ confirmed ajesujoba/AfriHuBERT covers Tshivenda ('ven' in its 1240 language
 tags) and loads via standard transformers (HubertModel/HubertForCTC) - no
 extra toolkit needed, unlike e.g. ESPnet-native models.
 
-Mirrors src/asr/pilot_finetune_mps_ven.py's structure/settings exactly (same data,
+Mirrors src/asr/pilot_finetune_wav2vec2_mps_ven.py's structure/settings exactly (same data,
 tokenizer, collator, MPS memory-safety config) with the model swapped.
 
 NOT the real Stage 1 run - see notebooks/colab_hubert_ven.ipynb for the full

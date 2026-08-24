@@ -12,7 +12,7 @@ run with PYTORCH_ENABLE_MPS_FALLBACK=1 (loss computes on CPU; the encoder,
 which dominates compute, stays on the GPU).
 
 Usage:
-    PYTORCH_ENABLE_MPS_FALLBACK=1 python src/asr/pilot_finetune_mps_ven.py
+    PYTORCH_ENABLE_MPS_FALLBACK=1 python src/asr/pilot_finetune_wav2vec2_mps_ven.py
     ... --train-clips 50 --eval-clips 20 --epochs 1   # smoke test
 """
 
