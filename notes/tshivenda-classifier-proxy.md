@@ -5,10 +5,13 @@
 The proposal's Tshivenda sub-study (§4.5) specifies fine-tuning the
 misinformation classifier on the Mukwevho et al. (2024) dataset - 23
 labeled Tshivenda news articles, referenced throughout the proposal as the
-GRU-baseline comparison point. That dataset is confirmed unavailable to this
-team: it was never publicly released (the paper itself states the source is
-"undisclosed"), it is not on the DSFSI public dataset registry, Hugging Face,
-or GitHub, and the authors could not provide it on request.
+GRU-baseline comparison point. That dataset is confirmed permanently
+unavailable: it was never publicly released (the paper itself states the
+source is "undisclosed"), it is not on the DSFSI public dataset registry,
+Hugging Face, or GitHub, and - per Dr Rananga directly (2026-08-24) - Mukwevho
+has misplaced it. Not a temporary access issue; there is no dataset
+left to request. Dr Rananga's guidance: proceed with the synthetic proxy
+route as the permanent approach, not a stand-in pending the original.
 
 The proposal already anticipates exactly this situation for the other two
 languages - §3.2: *"For Setswana and Sepedi, no dedicated misinformation
@@ -62,10 +65,12 @@ Result: 358 rows (179 real + 179 synthetic fake), saved to
    misinformation in general - a real limitation of the proxy, same as the
    news-topic-classification proxies already used for Setswana/Sepedi are
    not really "misinformation" tasks either.
-2. **No comparison to the Mukwevho GRU baseline is possible** - that
-   requires the original dataset. Objective 4's "compared to existing
-   text-only baselines" is satisfied by comparing AfroXLM-RoBERTa against
-   XLM-RoBERTa on this proxy instead, not against Mukwevho's GRU.
+2. **No comparison to the Mukwevho GRU baseline is possible, permanently**
+   - the original dataset is lost, not just inaccessible (confirmed by
+   Dr Rananga, 2026-08-24). Objective 4's "compared to existing text-only
+   baselines" is satisfied by comparing AfroXLM-RoBERTa against XLM-RoBERTa
+   on this proxy instead, not against Mukwevho's GRU - and that comparison
+   is now the permanent one for this sub-study, not an interim substitute.
 3. **Small source pool**: only 179 unique articles, all formal government
    register (Vukuzenzele), none of the informal/social-media register real
    misinformation typically appears in. Addressed as best possible via
