@@ -168,10 +168,43 @@ that caught real mistakes twice already in this project (e.g. Whisper v2's
 same treatment as AfriHuBERT: identified, evaluated, documented as a
 deliberate no rather than an open thread.
 
-**Final ASR model-family count: 2 working (Wav2Vec2, Whisper), 2 ruled out
-with evidence (AfriHuBERT, MMS - both fail identically via total CTC blank
+**Status after MMS/XEUS: 2 working (Wav2Vec2, Whisper), 2 ruled out with
+evidence (AfriHuBERT, MMS - both fail identically via total CTC blank
 collapse), 1 identified-but-not-attempted (XEUS, integration cost too high
-for the timeline).**
+for the timeline).** Superseded below - a fifth attempt followed.
+
+## Fifth model attempt: w2v-BERT 2.0 (2026-08-25)
+
+Picked `facebook/w2v-bert-2.0` as the next attempt: Conformer-based
+(convolution + self-attention, not a plain transformer over CNN features
+like Wav2Vec2/HuBERT), hybrid contrastive + masked-prediction pretraining
+objective (neither of the two objectives already tried), on 4.5M hours
+across 143+ languages - both a different architecture family and a much
+larger, broader pretraining pool than XLS-R, MMS, or AfriHuBERT. No
+confirmed Tshivenda coverage, same situation as XLS-R/Whisper/MMS - and HF's
+own fine-tuning writeup for this exact checkpoint demonstrates the same
+"language not in pretraining, fine-tune anyway" approach on Mongolian, a
+direct precedent for what we're doing here.
+
+Architecturally further from our existing scripts than MMS was: loads via
+`Wav2Vec2BertForCTC` (not `Wav2Vec2ForCTC`), and takes precomputed log-mel
+`input_features` via `SeamlessM4TFeatureExtractor` rather than raw-waveform
+`input_values` via `Wav2Vec2FeatureExtractor` - closer to the Whisper pilot
+script's data-prep pattern than the Wav2Vec2/MMS one. Still reuses the
+existing `tokenizers/ven/` CTC tokenizer unchanged. `src/asr/pilot_finetune_w2vbert_mps_ven.py`
+built from this hybrid pattern; two real bugs caught and fixed via a
+5-clip/1-epoch smoke test before trusting it:
+
+1. `model.freeze_feature_encoder()` doesn't exist on `Wav2Vec2BertForCTC` -
+   makes sense once you know why: unlike Wav2Vec2/MMS, there's no
+   raw-waveform CNN feature encoder to freeze in the first place, since the
+   model consumes precomputed features. Removed the call.
+2. (nothing else broke - the `Wav2Vec2BertForCTC LOAD REPORT` showed *zero*
+   UNEXPECTED keys, only the expected `lm_head` MISSING - a cleaner load
+   than XLS-R or MMS got, both of which discard quantizer/projection heads.)
+
+Real pilot run in progress: 5,000 raw NCHLT clips, 2 epochs (fewer epochs
+per Seani's guidance, matching the MMS pilot's scope).
 
 ## Pilot v2 update
 
