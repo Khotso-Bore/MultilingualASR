@@ -220,6 +220,33 @@ those were only ever tried against AfriHuBERT. Decision: keep testing
 architectures rather than mitigation-sweep the existing failures, per
 direction to continue trying model families.
 
+## Sixth model attempt: data2vec-audio (2026-08-25)
+
+All three collapses so far pretrain on some form of discretized target:
+AfriHuBERT (cluster IDs), MMS (quantized codebook via contrastive+diversity
+loss), w2v-BERT (hybrid quantized-contrastive + masked prediction). Picked
+`facebook/data2vec-audio-large` specifically to test whether discretization
+itself is the common thread - its objective is regression onto continuous,
+contextualized teacher representations (an EMA teacher network's own hidden
+states), no discretization anywhere in the pretraining target.
+
+Honest caveat up front: this checkpoint is pretrained on Librispeech only
+(960h, English) - no multilingual pretraining at all, the weakest
+cross-lingual transfer prior of anything tried so far (XLS-R/MMS/w2v-BERT
+all had broad multilingual pretraining). No multilingual data2vec-audio
+checkpoint was found to substitute. If this collapses too, it's still an
+informative data point (rules out discretization as the *sole* explanation)
+but the weaker prior needs to stay part of interpreting the result either
+way.
+
+Reuses raw-waveform `Wav2Vec2FeatureExtractor` + the existing
+`tokenizers/ven/` tokenizer, unlike w2v-BERT's log-mel setup - closer to
+the XLS-R/MMS pattern. `src/asr/pilot_finetune_data2vec_mps_ven.py` smoke-tested
+clean on the first try (model loads with only `lm_head` MISSING, same
+clean-load pattern as w2v-BERT; `freeze_feature_encoder()` works here,
+unlike w2v-BERT, since data2vec-audio does have a raw-waveform CNN feature
+encoder). Real pilot run in progress: 5,000 raw NCHLT clips, 2 epochs.
+
 ## Pilot v2 update
 
 v2: resumed from v1's weights, added ANV clips <= 10s to the mix (7,325 mixed
