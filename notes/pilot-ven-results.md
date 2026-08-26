@@ -100,6 +100,40 @@ Message sent to Seani:
 > ESPnet's XEUS, but it needs a separate toolkit outside our current
 > pipeline, so it's a bigger time cost).
 
+## Fourth model attempt: MMS (2026-08-25)
+
+Seani's response (session, 2026-08-24): keep trying model families - as many
+as reasonable - and a checkpoint not having confirmed Tshivenda coverage is
+not disqualifying on its own; "find a way to make it work, be creative, be
+innovative." This reframes the earlier 2-family decision: AfriHuBERT is still
+ruled out (training-dynamics failure, not a coverage problem), but the door
+is open for a fourth attempt rather than stopping at two.
+
+Checked `facebook/mms-1b-all` (the 1,162-language adapter-fine-tuned MMS
+checkpoint) - confirmed it does not list Venda. Picked
+`facebook/mms-300m` instead: the self-supervised MMS *base* checkpoint,
+pretrained (not fine-tuned) on ~500,000 hours across 1,400+ languages.
+Architecturally identical to Wav2Vec2 XLS-R-300M (both load via
+`Wav2Vec2ForCTC`), which is exactly why XLS-R already works for Tshivenda
+despite not being specifically labeled with Venda either - the recipe is
+"fine-tune a custom CTC tokenizer on a strong general acoustic backbone,"
+not "the checkpoint already knows the language." Same logic applies to
+Whisper, which has no `<|ven|>` token at all.
+
+`src/asr/pilot_finetune_mms_mps_ven.py` is a near line-for-line copy of
+`pilot_finetune_wav2vec2_mps_ven.py` with the base checkpoint swapped -
+same tokenizer, collator, and training loop. Verified it loads and trains
+end-to-end with a 5-clip/1-epoch smoke test (`Wav2Vec2ForCTC LOAD REPORT`
+shows the same UNEXPECTED/MISSING key pattern as XLS-R: quantizer/projection
+heads discarded, `lm_head` freshly initialized for our vocab - i.e. loading
+cleanly as a plain CTC fine-tune, not erroring). No real pilot run yet -
+that's next, same 5,000-clip/3-epoch recipe as the other two pilots.
+
+Stretch option if MMS also fails: ESPnet's XEUS, which does have confirmed
+Tshivenda coverage but needs a separate toolkit (not `transformers`-native) -
+higher integration cost, worth it now that breadth rather than 3-for-3 is
+the goal.
+
 ## Pilot v2 update
 
 v2: resumed from v1's weights, added ANV clips <= 10s to the mix (7,325 mixed
