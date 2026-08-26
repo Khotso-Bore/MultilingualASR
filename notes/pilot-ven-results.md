@@ -203,8 +203,22 @@ built from this hybrid pattern; two real bugs caught and fixed via a
    UNEXPECTED keys, only the expected `lm_head` MISSING - a cleaner load
    than XLS-R or MMS got, both of which discard quantizer/projection heads.)
 
-Real pilot run in progress: 5,000 raw NCHLT clips, 2 epochs (fewer epochs
-per Seani's guidance, matching the MMS pilot's scope).
+**Real pilot result: also collapses.** 5,000 raw NCHLT clips (4,974 kept),
+2 epochs. `eval_wer`/`eval_cer` = 0.9535/0.9329, bit-for-bit identical
+between epoch 1 and epoch 2 - frozen, not just similar. Confirmed by direct
+inspection: loaded the checkpoint, ran raw predictions on 5 training clips -
+~99% of frames predict blank, but unlike MMS (which decoded to nothing) the
+one non-blank frame decodes to the character `'n'`, so every sample outputs
+just `'n'`. Same "collapse to whichever single class is easiest" pattern as
+AfriHuBERT's attempt 5 (which collapsed to `'a'` after a blank-bias fix),
+just landing on a different token.
+
+**Emerging pattern: 3 of 4 non-Whisper CTC fine-tunes have now collapsed**
+(AfriHuBERT, MMS, w2v-BERT) - only Wav2Vec2 XLS-R-300M hasn't. None of MMS
+or w2v-BERT got any mitigation attempt (lower LR, blank-bias disfavor) -
+those were only ever tried against AfriHuBERT. Decision: keep testing
+architectures rather than mitigation-sweep the existing failures, per
+direction to continue trying model families.
 
 ## Pilot v2 update
 

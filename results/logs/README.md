@@ -1,8 +1,9 @@
 # Run Logs
 
-**Run count so far: 18 total training runs** (6 classifier, 2 Wav2Vec2 pilots,
+**Run count so far: 19 total training runs** (6 classifier, 2 Wav2Vec2 pilots,
 6 AfriHuBERT attempts, 3 Whisper runs - v1 done, an aborted v2 attempt,
-a rescoped v2 done, 1 MMS attempt). Updated as each new run finishes; every
+a rescoped v2 done, 1 MMS attempt, 1 w2v-BERT attempt). Updated as each new
+run finishes; every
 run (success, failure, or abort) gets one entry here.
 
 Raw (progress-bar-stripped) console output from every training run, kept as
@@ -161,6 +162,23 @@ expect a different outcome here. ESPnet's XEUS (the one candidate with
 confirmed native Tshivenda coverage) was checked and not pursued - requires
 a non-mainline ESPnet fork, a work-in-progress community fine-tuning repo,
 and states CUDA as a prerequisite with no confirmed local-MPS-pilot path.
-**Final count: 2 working ASR families (Wav2Vec2, Whisper), 2 ruled out with
-evidence (AfriHuBERT, MMS), 1 identified-but-not-attempted (XEUS).** See
-`notes/pilot-ven-results.md`.
+
+## w2v-BERT 2.0 pilot - failed, collapsed to a different single token
+
+Fifth model attempt. `facebook/w2v-bert-2.0` - Conformer-based, hybrid
+contrastive + masked-prediction objective, 4.5M hours/143+ languages -
+architecturally the most different checkpoint tried so far.
+
+1. `w2vbert_attempt1_collapsed.log` - 5,000 raw NCHLT clips (4,974 kept), 2
+   epochs. `eval_wer`/`eval_cer` = 0.9535/0.9329, bit-for-bit identical
+   between epoch 1 and epoch 2. Confirmed by direct inspection: ~99% of
+   frames predict blank, but the one non-blank frame decodes to `'n'`, so
+   every sample outputs just `'n'` - same "collapse to whichever single
+   class is easiest" pattern as AfriHuBERT's attempt 5 (`'a'`), just a
+   different token.
+
+**Status: 3 of 4 non-Whisper CTC fine-tunes have now collapsed** (AfriHuBERT,
+MMS, w2v-BERT) - only Wav2Vec2 XLS-R-300M hasn't. Neither MMS nor w2v-BERT
+got a mitigation attempt (lower LR, blank-bias disfavor) - those were only
+tried against AfriHuBERT. Continuing to test architectures rather than
+mitigation-sweeping the existing failures. See `notes/pilot-ven-results.md`.
