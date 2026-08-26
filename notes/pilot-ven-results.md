@@ -150,19 +150,28 @@ Not yet root-caused further (no lr sweep, no blank-bias-disfavor attempt
 run for MMS - unlike the six systematic AfriHuBERT attempts, this is one
 data point so far).
 
-**Decision (2026-08-25): treat this as a second confirmed collapse, move to
-the stretch option.** Not re-running AfriHuBERT's full six-attempt mitigation
-sweep against MMS too - one clean, directly-verified collapse (not just
-inferred from WER) is enough signal given AfriHuBERT already tried the same
-mitigations (lower LR, blank-bias disfavor) and neither saved it; no reason
-to expect a different outcome here. Moving to ESPnet's XEUS next - the one
-candidate with *confirmed* native Tshivenda coverage rather than another
-cross-lingual-transfer bet.
+**Decision (2026-08-25): treat this as a second confirmed collapse.** Not
+re-running AfriHuBERT's full six-attempt mitigation sweep against MMS too -
+one clean, directly-verified collapse (not just inferred from WER) is enough
+signal given AfriHuBERT already tried the same mitigations (lower LR,
+blank-bias disfavor) and neither saved it; no reason to expect a different
+outcome here.
 
-Stretch option if MMS also fails: ESPnet's XEUS, which does have confirmed
-Tshivenda coverage but needs a separate toolkit (not `transformers`-native) -
-higher integration cost, worth it now that breadth rather than 3-for-3 is
-the goal.
+**XEUS (ESPnet), checked and not pursued.** The remaining candidate with
+*confirmed* native Tshivenda coverage. Checked what integration would take:
+a non-mainline ESPnet fork (`espnet @ git+.../wanchichen/espnet.git@ssl`,
+not the standard package), the best available community fine-tuning repo
+is marked work-in-progress with limited docs, and it states CUDA as a
+prerequisite - no confirmed path to the cheap local-MPS-pilot-first step
+that caught real mistakes twice already in this project (e.g. Whisper v2's
+51-hour scoping issue). Given the timeline, decided not to pursue it -
+same treatment as AfriHuBERT: identified, evaluated, documented as a
+deliberate no rather than an open thread.
+
+**Final ASR model-family count: 2 working (Wav2Vec2, Whisper), 2 ruled out
+with evidence (AfriHuBERT, MMS - both fail identically via total CTC blank
+collapse), 1 identified-but-not-attempted (XEUS, integration cost too high
+for the timeline).**
 
 ## Pilot v2 update
 

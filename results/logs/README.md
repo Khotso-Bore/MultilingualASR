@@ -157,6 +157,10 @@ pretraining data/scale/init differs.
 **Decision: MMS ruled out as a second confirmed collapse, not re-running
 AfriHuBERT's full mitigation sweep against it too** - the same fixes (lower
 LR, blank-bias disfavor) already failed to save AfriHuBERT, no reason to
-expect a different outcome here. Moving to ESPnet's XEUS next, the one
-candidate with confirmed native Tshivenda coverage. See
+expect a different outcome here. ESPnet's XEUS (the one candidate with
+confirmed native Tshivenda coverage) was checked and not pursued - requires
+a non-mainline ESPnet fork, a work-in-progress community fine-tuning repo,
+and states CUDA as a prerequisite with no confirmed local-MPS-pilot path.
+**Final count: 2 working ASR families (Wav2Vec2, Whisper), 2 ruled out with
+evidence (AfriHuBERT, MMS), 1 identified-but-not-attempted (XEUS).** See
 `notes/pilot-ven-results.md`.
