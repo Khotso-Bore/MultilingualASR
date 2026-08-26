@@ -126,8 +126,34 @@ same tokenizer, collator, and training loop. Verified it loads and trains
 end-to-end with a 5-clip/1-epoch smoke test (`Wav2Vec2ForCTC LOAD REPORT`
 shows the same UNEXPECTED/MISSING key pattern as XLS-R: quantizer/projection
 heads discarded, `lm_head` freshly initialized for our vocab - i.e. loading
-cleanly as a plain CTC fine-tune, not erroring). No real pilot run yet -
-that's next, same 5,000-clip/3-epoch recipe as the other two pilots.
+cleanly as a plain CTC fine-tune, not erroring).
+
+**Real pilot result: fails the same way AfriHuBERT did - total blank
+collapse.** 5,000 raw NCHLT clips (4,974 kept after the 10s filter), 2
+epochs (Seani's guidance: fewer epochs is better, so this pilot used 2 not
+3). `eval_wer`/`eval_cer` = 0.971/0.961 after epoch 1, 0.998/0.877 after
+epoch 2 - numbers that landed suspiciously close to AfriHuBERT's own frozen
+0.9709/0.9614, which was itself the signature of predicting blank on every
+frame. Confirmed by direct inspection, not just the WER score: loaded the
+saved checkpoint and ran raw predictions on 5 training clips - **100% of
+frames predict the pad/blank token on every single example**, decoding to
+an empty string every time, identical failure mode to AfriHuBERT's first
+four attempts.
+
+This is a genuinely interesting result on its own terms: MMS-300m and
+XLS-R-300M are the same `Wav2Vec2ForCTC` architecture and the same
+contrastive self-supervised pretraining objective (unlike AfriHuBERT's
+masked-cluster-prediction objective) - yet one collapses on Tshivenda and
+the other doesn't. So "architecture family" isn't what predicts collapse;
+something about the specific pretraining data/scale/initialization is.
+Not yet root-caused further (no lr sweep, no blank-bias-disfavor attempt
+run for MMS - unlike the six systematic AfriHuBERT attempts, this is one
+data point so far).
+
+**Decision needed**: try the same targeted mitigations that were run
+against AfriHuBERT (lower learning rate, blank-bias disfavor at init), or
+treat this as a second confirmed collapse and move to the stretch option
+(XEUS) instead. Not yet decided - flagging for Seani.
 
 Stretch option if MMS also fails: ESPnet's XEUS, which does have confirmed
 Tshivenda coverage but needs a separate toolkit (not `transformers`-native) -

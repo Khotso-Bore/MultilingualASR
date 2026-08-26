@@ -1,9 +1,9 @@
 # Run Logs
 
-**Run count so far: 17 total training runs** (6 classifier, 2 Wav2Vec2 pilots,
+**Run count so far: 18 total training runs** (6 classifier, 2 Wav2Vec2 pilots,
 6 AfriHuBERT attempts, 3 Whisper runs - v1 done, an aborted v2 attempt,
-a rescoped v2 done). Updated as each new run finishes; every run
-(success, failure, or abort) gets one entry here.
+a rescoped v2 done, 1 MMS attempt). Updated as each new run finishes; every
+run (success, failure, or abort) gets one entry here.
 
 Raw (progress-bar-stripped) console output from every training run, kept as
 evidence alongside the summarised numbers in `notes/`. Chronological order
@@ -130,3 +130,29 @@ requires. AfriHuBERT is not currently usable as the third model without more
 work than the timeline allows. See `notes/pilot-ven-results.md` for the
 write-up and the proposed message to Seani about picking a different third
 model.
+
+## MMS pilot - failed, same total CTC blank collapse as AfriHuBERT
+
+Fourth model attempt, per Seani's guidance to keep trying model families
+even without confirmed Tshivenda coverage. `facebook/mms-300m` - the MMS
+self-supervised base checkpoint, architecturally identical to Wav2Vec2
+XLS-R-300M (`Wav2Vec2ForCTC`, contrastive pretraining, not AfriHuBERT's
+masked-cluster objective).
+
+1. `mms_attempt1_collapsed.log` - 5,000 raw NCHLT clips (4,974 kept), 2
+   epochs (fewer epochs per Seani's guidance). `eval_wer`/`eval_cer` =
+   0.971/0.961 after epoch 1, 0.998/0.877 after epoch 2 - numbers close
+   enough to AfriHuBERT's own frozen 0.9709/0.9614 to be suspicious.
+   Confirmed by direct inspection of decoded predictions (not just the WER
+   score): loaded the saved checkpoint and ran raw predictions on 5 training
+   clips - 100% of frames predict the pad/blank token on every example,
+   decoding to an empty string every time. Identical failure mode to
+   AfriHuBERT's first four attempts.
+
+Notable: this rules out "architecture family" as the predictor of collapse.
+MMS and XLS-R share the same architecture and pretraining objective, yet one
+collapses on Tshivenda and the other doesn't - something about the specific
+pretraining data/scale/init differs. Only one attempt run so far (not the
+six systematic variations AfriHuBERT got); decision pending on whether to
+run the same mitigations (lower LR, blank-bias disfavor) against MMS or
+move to the stretch option (ESPnet's XEUS). See `notes/pilot-ven-results.md`.
