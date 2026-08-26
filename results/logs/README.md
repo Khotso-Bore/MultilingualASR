@@ -152,7 +152,11 @@ masked-cluster objective).
 Notable: this rules out "architecture family" as the predictor of collapse.
 MMS and XLS-R share the same architecture and pretraining objective, yet one
 collapses on Tshivenda and the other doesn't - something about the specific
-pretraining data/scale/init differs. Only one attempt run so far (not the
-six systematic variations AfriHuBERT got); decision pending on whether to
-run the same mitigations (lower LR, blank-bias disfavor) against MMS or
-move to the stretch option (ESPnet's XEUS). See `notes/pilot-ven-results.md`.
+pretraining data/scale/init differs.
+
+**Decision: MMS ruled out as a second confirmed collapse, not re-running
+AfriHuBERT's full mitigation sweep against it too** - the same fixes (lower
+LR, blank-bias disfavor) already failed to save AfriHuBERT, no reason to
+expect a different outcome here. Moving to ESPnet's XEUS next, the one
+candidate with confirmed native Tshivenda coverage. See
+`notes/pilot-ven-results.md`.
