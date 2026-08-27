@@ -293,8 +293,26 @@ the way XLS-R/MMS/Whisper's Tshivenda transfer is.
 
 Architecturally close to XLS-R (raw-waveform `Wav2Vec2FeatureExtractor`,
 `UniSpeechForCTC`, `freeze_feature_encoder()` works) - smoke-tested clean
-on the first try. Real pilot run in progress: 5,000 raw NCHLT clips, 2
-epochs.
+on the first try.
+
+**Real pilot result: works.** No collapse. 5,000 raw NCHLT clips (4,974
+kept), 2 epochs. `eval_wer`/`eval_cer` fell every epoch: 0.765/0.179 ->
+**0.610/0.144** - comparable in shape to XLS-R's own first pilot
+(0.614/0.151 at the same scale). Confirmed by direct inspection, not just
+the WER score: decoded predictions on 5 training clips are genuinely
+close to the references - one exact match ("ofisi ya muhasho wa zwa"),
+the rest off by a word-boundary split or a single character, nothing like
+the four collapses above. Log: `results/logs/unispeech_attempt1_works_wer0610.log`.
+
+**UniSpeech is the second working non-Whisper model, after XLS-R.** Out of
+6 non-Whisper checkpoints tried, 2 work (XLS-R, UniSpeech) and 4 collapse
+(AfriHuBERT, MMS, w2v-BERT, data2vec-audio). Both working checkpoints share
+a multi-task or discriminative element beyond pure self-supervision - XLS-R
+via CTC-friendly contrastive pretraining validated at scale across 128
+languages, UniSpeech via its explicit phonetic-CTC + contrastive multi-task
+design, specifically built and validated for cross-lingual transfer. Worth
+noting as a shape to the pattern, though not yet enough data points to call
+it a confirmed rule.
 
 ## External model check: DSFSI's own multilingual Whisper (2026-08-25)
 

@@ -1,9 +1,10 @@
 # Run Logs
 
-**Run count so far: 21 total training runs** (6 classifier, 2 Wav2Vec2 pilots,
+**Run count so far: 22 total training runs** (6 classifier, 2 Wav2Vec2 pilots,
 6 AfriHuBERT attempts, 3 Whisper runs - v1 done, an aborted v2 attempt,
 a rescoped v2 done, 2 MMS attempts, 1 w2v-BERT attempt, 1 data2vec-audio
-attempt). Updated as each new run finishes; every run (success, failure, or
+attempt, 1 UniSpeech attempt). Updated as each new run finishes; every run
+(success, failure, or
 abort) gets one entry here.
 
 Raw (progress-bar-stripped) console output from every training run, kept as
@@ -214,5 +215,23 @@ pattern above.
 out in turn - not discretization (data2vec-audio has none, collapsed
 anyway), not the learning rate (3x lower didn't save MMS). XLS-R-300M
 remains the only non-Whisper CTC checkpoint that trains cleanly, out of 5
-tried, with no confirmed explanation yet for why. See
+tried, with no confirmed explanation yet for why.
+
+## UniSpeech pilot - works, no collapse
+
+Seventh model attempt. `microsoft/unispeech-large-1500h-cv` - multi-task
+phonetic-CTC + contrastive pretraining on CommonVoice, specifically
+validated in its own paper for cross-lingual transfer to unseen languages.
+
+1. `unispeech_attempt1_works_wer0610.log` - 5,000 raw NCHLT clips (4,974
+   kept), 2 epochs. `eval_wer`/`eval_cer` fell every epoch: 0.765/0.179 ->
+   **0.610/0.144**, comparable in shape to XLS-R's own first pilot
+   (0.614/0.151 at the same scale). Confirmed by direct inspection: decoded
+   predictions on 5 training clips are genuinely close to references - one
+   exact match, the rest off by a word-boundary or single character.
+
+**UniSpeech is the second working non-Whisper model, after XLS-R.** Out of
+6 non-Whisper checkpoints tried: 2 work (XLS-R, UniSpeech), 4 collapse
+(AfriHuBERT, MMS, w2v-BERT, data2vec-audio). Both working checkpoints share
+a multi-task/discriminative element beyond pure self-supervision. See
 `notes/pilot-ven-results.md`.
