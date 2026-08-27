@@ -1,9 +1,11 @@
 # Run Logs
 
-**Run count so far: 17 total training runs** (6 classifier, 2 Wav2Vec2 pilots,
+**Run count so far: 22 total training runs** (6 classifier, 2 Wav2Vec2 pilots,
 6 AfriHuBERT attempts, 3 Whisper runs - v1 done, an aborted v2 attempt,
-a rescoped v2 done). Updated as each new run finishes; every run
-(success, failure, or abort) gets one entry here.
+a rescoped v2 done, 2 MMS attempts, 1 w2v-BERT attempt, 1 data2vec-audio
+attempt, 1 UniSpeech attempt). Updated as each new run finishes; every run
+(success, failure, or
+abort) gets one entry here.
 
 Raw (progress-bar-stripped) console output from every training run, kept as
 evidence alongside the summarised numbers in `notes/`. Chronological order
@@ -130,3 +132,106 @@ requires. AfriHuBERT is not currently usable as the third model without more
 work than the timeline allows. See `notes/pilot-ven-results.md` for the
 write-up and the proposed message to Seani about picking a different third
 model.
+
+## MMS pilot - failed, same total CTC blank collapse as AfriHuBERT
+
+Fourth model attempt, per Seani's guidance to keep trying model families
+even without confirmed Tshivenda coverage. `facebook/mms-300m` - the MMS
+self-supervised base checkpoint, architecturally identical to Wav2Vec2
+XLS-R-300M (`Wav2Vec2ForCTC`, contrastive pretraining, not AfriHuBERT's
+masked-cluster objective).
+
+1. `mms_attempt1_collapsed.log` - 5,000 raw NCHLT clips (4,974 kept), 2
+   epochs (fewer epochs per Seani's guidance). `eval_wer`/`eval_cer` =
+   0.971/0.961 after epoch 1, 0.998/0.877 after epoch 2 - numbers close
+   enough to AfriHuBERT's own frozen 0.9709/0.9614 to be suspicious.
+   Confirmed by direct inspection of decoded predictions (not just the WER
+   score): loaded the saved checkpoint and ran raw predictions on 5 training
+   clips - 100% of frames predict the pad/blank token on every example,
+   decoding to an empty string every time. Identical failure mode to
+   AfriHuBERT's first four attempts.
+
+Notable: this rules out "architecture family" as the predictor of collapse.
+MMS and XLS-R share the same architecture and pretraining objective, yet one
+collapses on Tshivenda and the other doesn't - something about the specific
+pretraining data/scale/init differs.
+
+**Decision: MMS ruled out as a second confirmed collapse, not re-running
+AfriHuBERT's full mitigation sweep against it too** - the same fixes (lower
+LR, blank-bias disfavor) already failed to save AfriHuBERT, no reason to
+expect a different outcome here. ESPnet's XEUS (the one candidate with
+confirmed native Tshivenda coverage) was checked and not pursued - requires
+a non-mainline ESPnet fork, a work-in-progress community fine-tuning repo,
+and states CUDA as a prerequisite with no confirmed local-MPS-pilot path.
+
+## w2v-BERT 2.0 pilot - failed, collapsed to a different single token
+
+Fifth model attempt. `facebook/w2v-bert-2.0` - Conformer-based, hybrid
+contrastive + masked-prediction objective, 4.5M hours/143+ languages -
+architecturally the most different checkpoint tried so far.
+
+1. `w2vbert_attempt1_collapsed.log` - 5,000 raw NCHLT clips (4,974 kept), 2
+   epochs. `eval_wer`/`eval_cer` = 0.9535/0.9329, bit-for-bit identical
+   between epoch 1 and epoch 2. Confirmed by direct inspection: ~99% of
+   frames predict blank, but the one non-blank frame decodes to `'n'`, so
+   every sample outputs just `'n'` - same "collapse to whichever single
+   class is easiest" pattern as AfriHuBERT's attempt 5 (`'a'`), just a
+   different token.
+
+## data2vec-audio pilot - failed, disproves the discretization hypothesis
+
+Sixth model attempt. `facebook/data2vec-audio-large` - regresses onto
+continuous teacher representations, no discretized pretraining target at
+all (unlike AfriHuBERT/MMS/w2v-BERT, which all discretize in some way).
+English-only pretraining (Librispeech) - weakest multilingual transfer
+prior tried so far.
+
+1. `data2vec_attempt1_collapsed.log` - 5,000 raw NCHLT clips (4,974 kept),
+   2 epochs. `eval_wer`/`eval_cer` = 0.9709/0.9614, bit-for-bit identical
+   between epochs and identical to AfriHuBERT's own original blank-collapse
+   numbers. Confirmed by direct inspection: 100% blank on every frame of
+   every checked clip, decoding to an empty string every time.
+
+**This rules out discretization as the explanation** - data2vec-audio has
+none, and collapsed exactly like the three that do.
+
+**Status: 4 of 5 non-Whisper CTC fine-tunes have now collapsed**
+(AfriHuBERT, MMS, w2v-BERT, data2vec-audio) across four different
+architectures and four different pretraining objectives - only Wav2Vec2
+XLS-R-300M hasn't.
+
+## MMS re-test at 3x lower learning rate - still collapses
+
+Testing whether the shared training recipe (not model choice) explains the
+pattern above.
+
+1. `mms_attempt2_lowlr_still_collapsed.log` - same MMS pilot, `--learning-rate
+   3e-5` instead of the default `1e-4` (3x lower, same reduction factor
+   tried against AfriHuBERT). Identical result: `eval_wer`/`eval_cer` =
+   0.9709/0.9614, frozen across both epochs, 100% blank confirmed by direct
+   inspection.
+
+**The recipe theory is disproven too.** Two explanations tried and ruled
+out in turn - not discretization (data2vec-audio has none, collapsed
+anyway), not the learning rate (3x lower didn't save MMS). XLS-R-300M
+remains the only non-Whisper CTC checkpoint that trains cleanly, out of 5
+tried, with no confirmed explanation yet for why.
+
+## UniSpeech pilot - works, no collapse
+
+Seventh model attempt. `microsoft/unispeech-large-1500h-cv` - multi-task
+phonetic-CTC + contrastive pretraining on CommonVoice, specifically
+validated in its own paper for cross-lingual transfer to unseen languages.
+
+1. `unispeech_attempt1_works_wer0610.log` - 5,000 raw NCHLT clips (4,974
+   kept), 2 epochs. `eval_wer`/`eval_cer` fell every epoch: 0.765/0.179 ->
+   **0.610/0.144**, comparable in shape to XLS-R's own first pilot
+   (0.614/0.151 at the same scale). Confirmed by direct inspection: decoded
+   predictions on 5 training clips are genuinely close to references - one
+   exact match, the rest off by a word-boundary or single character.
+
+**UniSpeech is the second working non-Whisper model, after XLS-R.** Out of
+6 non-Whisper checkpoints tried: 2 work (XLS-R, UniSpeech), 4 collapse
+(AfriHuBERT, MMS, w2v-BERT, data2vec-audio). Both working checkpoints share
+a multi-task/discriminative element beyond pure self-supervision. See
+`notes/pilot-ven-results.md`.
