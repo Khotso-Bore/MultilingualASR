@@ -1,10 +1,10 @@
 # Run Logs
 
-**Run count so far: 19 total training runs** (6 classifier, 2 Wav2Vec2 pilots,
+**Run count so far: 20 total training runs** (6 classifier, 2 Wav2Vec2 pilots,
 6 AfriHuBERT attempts, 3 Whisper runs - v1 done, an aborted v2 attempt,
-a rescoped v2 done, 1 MMS attempt, 1 w2v-BERT attempt). Updated as each new
-run finishes; every
-run (success, failure, or abort) gets one entry here.
+a rescoped v2 done, 1 MMS attempt, 1 w2v-BERT attempt, 1 data2vec-audio
+attempt). Updated as each new run finishes; every run (success, failure, or
+abort) gets one entry here.
 
 Raw (progress-bar-stripped) console output from every training run, kept as
 evidence alongside the summarised numbers in `notes/`. Chronological order
@@ -177,8 +177,27 @@ architecturally the most different checkpoint tried so far.
    class is easiest" pattern as AfriHuBERT's attempt 5 (`'a'`), just a
    different token.
 
-**Status: 3 of 4 non-Whisper CTC fine-tunes have now collapsed** (AfriHuBERT,
-MMS, w2v-BERT) - only Wav2Vec2 XLS-R-300M hasn't. Neither MMS nor w2v-BERT
-got a mitigation attempt (lower LR, blank-bias disfavor) - those were only
-tried against AfriHuBERT. Continuing to test architectures rather than
-mitigation-sweeping the existing failures. See `notes/pilot-ven-results.md`.
+## data2vec-audio pilot - failed, disproves the discretization hypothesis
+
+Sixth model attempt. `facebook/data2vec-audio-large` - regresses onto
+continuous teacher representations, no discretized pretraining target at
+all (unlike AfriHuBERT/MMS/w2v-BERT, which all discretize in some way).
+English-only pretraining (Librispeech) - weakest multilingual transfer
+prior tried so far.
+
+1. `data2vec_attempt1_collapsed.log` - 5,000 raw NCHLT clips (4,974 kept),
+   2 epochs. `eval_wer`/`eval_cer` = 0.9709/0.9614, bit-for-bit identical
+   between epochs and identical to AfriHuBERT's own original blank-collapse
+   numbers. Confirmed by direct inspection: 100% blank on every frame of
+   every checked clip, decoding to an empty string every time.
+
+**This rules out discretization as the explanation** - data2vec-audio has
+none, and collapsed exactly like the three that do.
+
+**Status: 4 of 5 non-Whisper CTC fine-tunes have now collapsed**
+(AfriHuBERT, MMS, w2v-BERT, data2vec-audio) across four different
+architectures and four different pretraining objectives - only Wav2Vec2
+XLS-R-300M hasn't. The pattern now points at the shared training recipe
+(lr 1e-4, frozen feature encoder) rather than model choice. Testing that
+directly: re-running MMS (same architecture/objective as XLS-R, only the
+checkpoint differs) at `--learning-rate 3e-5`. See `notes/pilot-ven-results.md`.

@@ -245,7 +245,33 @@ the XLS-R/MMS pattern. `src/asr/pilot_finetune_data2vec_mps_ven.py` smoke-tested
 clean on the first try (model loads with only `lm_head` MISSING, same
 clean-load pattern as w2v-BERT; `freeze_feature_encoder()` works here,
 unlike w2v-BERT, since data2vec-audio does have a raw-waveform CNN feature
-encoder). Real pilot run in progress: 5,000 raw NCHLT clips, 2 epochs.
+encoder).
+
+**Real pilot result: collapses too, identically to blank.** 5,000 raw
+NCHLT clips (4,974 kept), 2 epochs. `eval_wer`/`eval_cer` = 0.9709/0.9614,
+bit-for-bit identical between epoch 1 and epoch 2 - and identical to
+AfriHuBERT's own original blank-collapse signature. Confirmed by direct
+inspection: 100% of frames predict blank on every one of 5 checked training
+clips, decoding to an empty string every time.
+
+**This disproves the discretization hypothesis.** data2vec-audio has no
+discretized pretraining target at all, and it collapsed exactly like the
+three that do. **4 of 5 non-Whisper CTC fine-tunes have now collapsed**
+(AfriHuBERT, MMS, w2v-BERT, data2vec-audio) across four different
+architectures and four different pretraining objectives (masked-cluster,
+contrastive-quantized, hybrid, continuous-regression) - only XLS-R-300M
+hasn't. The pattern now points at the shared training recipe (lr 1e-4,
+frozen feature encoder, this exact batch/warmup setup) rather than model
+choice - XLS-R may simply be the one checkpoint that tolerates it.
+
+**Next: testing the recipe theory directly.** Re-running MMS (architecturally
+identical to XLS-R - same `Wav2Vec2ForCTC`, same contrastive objective, only
+the checkpoint and hyperparameters differ) at `--learning-rate 3e-5` instead
+of the default `1e-4`, the same reduction factor tried against AfriHuBERT.
+If a lower LR alone fixes MMS, that's strong evidence this was a recipe
+problem all along, not a model-selection problem - and potentially unlocks
+several of the "failed" models at once rather than needing a sixth or
+seventh architecture.
 
 ## Pilot v2 update
 
