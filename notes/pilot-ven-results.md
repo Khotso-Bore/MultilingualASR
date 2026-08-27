@@ -281,6 +281,52 @@ mitigations AfriHuBERT tried) remain untested against MMS/w2v-BERT/data2vec,
 but two clean single-variable tests have now come back negative, so each
 further sweep has lower expected payoff than it did before this round.
 
+## Seventh model attempt: UniSpeech (2026-08-25)
+
+Picked `microsoft/unispeech-large-1500h-cv`: multi-task pretraining
+combining phonetically-aware contrastive self-supervision with supervised
+phonetic CTC learning, on CommonVoice's multilingual pool. Notable
+difference from every prior attempt: UniSpeech's own paper specifically
+evaluates cross-lingual transfer to *unseen* languages via CommonVoice -
+the exact scenario here, not an incidental side effect of broad pretraining
+the way XLS-R/MMS/Whisper's Tshivenda transfer is.
+
+Architecturally close to XLS-R (raw-waveform `Wav2Vec2FeatureExtractor`,
+`UniSpeechForCTC`, `freeze_feature_encoder()` works) - smoke-tested clean
+on the first try. Real pilot run in progress: 5,000 raw NCHLT clips, 2
+epochs.
+
+## External model check: DSFSI's own multilingual Whisper (2026-08-25)
+
+Per instruction to check for any model with confirmed Tshivenda support:
+found `dsfsi-anv/za-anv-multilingual-whisper-v3-turbo` on Hugging Face -
+`whisper-large-v3-turbo` fine-tuned on 7 South African languages including
+Venda, trained on the same ANV (Swivuriso) corpus this project already
+uses. Reported overall WER 0.1501 / CER 0.0510 (across all 7 languages,
+not Tshivenda-isolated) - notably better than our own best pilot number,
+though not a like-for-like comparison (different eval set, full-scale
+training vs. our laptop-scale pilots).
+
+**Could not evaluate it - the published repo is broken.** Attempted to
+load it via `src/asr/zero_shot_baseline_ven.py` (which accepts any HF
+model id); failed with a tokenizer construction error. Investigated
+directly: the repo's `vocab.json` is 746 bytes - nowhere near a real
+~50k-token Whisper vocabulary - and `merges.txt`/`tokenizer.json` are
+missing entirely. Tried reconstructing a working tokenizer by combining
+their `vocab.json` with the base `openai/whisper-large-v3-turbo`'s
+`merges.txt`/`special_tokens_map.json`/`tokenizer_config.json` - still
+failed (`Token \`Ġ\` out of vocabulary`), confirming their vocab.json
+itself is incomplete/corrupted, not just missing companion files. This is
+an upload problem on DSFSI's end, not something fixable from outside their
+repo.
+
+**Worth raising with Seani directly**: DSFSI is her own research group
+(AfriDSAI/Data Science for Social Impact). She may be able to get a working
+checkpoint or the real per-language (Tshivenda-isolated) numbers directly,
+which would be a strong external benchmark for this whole ASR comparison -
+a full-scale multilingual Whisper-v3-turbo trained on the exact same source
+data we use, rather than another architecture bet.
+
 ## Pilot v2 update
 
 v2: resumed from v1's weights, added ANV clips <= 10s to the mix (7,325 mixed
