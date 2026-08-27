@@ -264,14 +264,22 @@ hasn't. The pattern now points at the shared training recipe (lr 1e-4,
 frozen feature encoder, this exact batch/warmup setup) rather than model
 choice - XLS-R may simply be the one checkpoint that tolerates it.
 
-**Next: testing the recipe theory directly.** Re-running MMS (architecturally
-identical to XLS-R - same `Wav2Vec2ForCTC`, same contrastive objective, only
-the checkpoint and hyperparameters differ) at `--learning-rate 3e-5` instead
-of the default `1e-4`, the same reduction factor tried against AfriHuBERT.
-If a lower LR alone fixes MMS, that's strong evidence this was a recipe
-problem all along, not a model-selection problem - and potentially unlocks
-several of the "failed" models at once rather than needing a sixth or
-seventh architecture.
+**Recipe theory tested, disproven too.** Re-ran MMS at `--learning-rate 3e-5`
+(3x lower, same reduction factor tried against AfriHuBERT) - identical
+result: `eval_wer`/`eval_cer` = 0.9709/0.9614, frozen across both epochs,
+100% blank on every checked frame (confirmed by direct inspection again,
+not just WER). Log: `results/logs/mms_attempt2_lowlr_still_collapsed.log`.
+
+**Where this leaves the model search.** Two explanations tried and disproven
+in turn: not discretization (data2vec-audio has none, collapsed anyway), and
+not the learning rate (3x lower didn't save MMS either). Wav2Vec2 XLS-R-300M
+remains the only non-Whisper CTC checkpoint that trains cleanly on this
+tokenizer/recipe, out of 5 tried, and nothing tested so far explains *why*
+it's the exception rather than the rule. Further hyperparameter sweeps
+(blank-bias disfavor, longer warmup, unfrozen feature encoder - the other
+mitigations AfriHuBERT tried) remain untested against MMS/w2v-BERT/data2vec,
+but two clean single-variable tests have now come back negative, so each
+further sweep has lower expected payoff than it did before this round.
 
 ## Pilot v2 update
 

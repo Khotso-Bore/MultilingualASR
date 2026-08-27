@@ -1,8 +1,8 @@
 # Run Logs
 
-**Run count so far: 20 total training runs** (6 classifier, 2 Wav2Vec2 pilots,
+**Run count so far: 21 total training runs** (6 classifier, 2 Wav2Vec2 pilots,
 6 AfriHuBERT attempts, 3 Whisper runs - v1 done, an aborted v2 attempt,
-a rescoped v2 done, 1 MMS attempt, 1 w2v-BERT attempt, 1 data2vec-audio
+a rescoped v2 done, 2 MMS attempts, 1 w2v-BERT attempt, 1 data2vec-audio
 attempt). Updated as each new run finishes; every run (success, failure, or
 abort) gets one entry here.
 
@@ -197,7 +197,22 @@ none, and collapsed exactly like the three that do.
 **Status: 4 of 5 non-Whisper CTC fine-tunes have now collapsed**
 (AfriHuBERT, MMS, w2v-BERT, data2vec-audio) across four different
 architectures and four different pretraining objectives - only Wav2Vec2
-XLS-R-300M hasn't. The pattern now points at the shared training recipe
-(lr 1e-4, frozen feature encoder) rather than model choice. Testing that
-directly: re-running MMS (same architecture/objective as XLS-R, only the
-checkpoint differs) at `--learning-rate 3e-5`. See `notes/pilot-ven-results.md`.
+XLS-R-300M hasn't.
+
+## MMS re-test at 3x lower learning rate - still collapses
+
+Testing whether the shared training recipe (not model choice) explains the
+pattern above.
+
+1. `mms_attempt2_lowlr_still_collapsed.log` - same MMS pilot, `--learning-rate
+   3e-5` instead of the default `1e-4` (3x lower, same reduction factor
+   tried against AfriHuBERT). Identical result: `eval_wer`/`eval_cer` =
+   0.9709/0.9614, frozen across both epochs, 100% blank confirmed by direct
+   inspection.
+
+**The recipe theory is disproven too.** Two explanations tried and ruled
+out in turn - not discretization (data2vec-audio has none, collapsed
+anyway), not the learning rate (3x lower didn't save MMS). XLS-R-300M
+remains the only non-Whisper CTC checkpoint that trains cleanly, out of 5
+tried, with no confirmed explanation yet for why. See
+`notes/pilot-ven-results.md`.
