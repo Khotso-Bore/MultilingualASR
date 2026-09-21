@@ -43,6 +43,8 @@ flag immediately here if the real step-rate looks off once training starts.
 
 | 17:23 | Preprocessing finished (~1h), training actually started. Step 260/2,301 (11%), ~16-17s/step, tqdm ETA ~9h31m remaining. On track for the original ~12-13h total estimate. No errors. |
 
+| 19:18 | Step 645/2,301 (28%), ~16-17s/step holding steady, tqdm ETA ~7h43m remaining. No errors. |
+
 *(updated as the run progresses - see notes below on update cadence. An hourly session-local loop, job `ff7d261c`, is checking this automatically now.)*
 
 ## A note on update cadence
