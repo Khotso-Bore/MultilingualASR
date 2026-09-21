@@ -45,6 +45,8 @@ flag immediately here if the real step-rate looks off once training starts.
 
 | 19:18 | Step 645/2,301 (28%), ~16-17s/step holding steady, tqdm ETA ~7h43m remaining. No errors. |
 
+| 21:15 | Step 979/2,301 (42.5%), tqdm ETA ~9h35m remaining. Per-step rate has slowed to ~26-28s/step (from ~16-17s/step earlier) - `vm.swapusage` shows 24.2GB/25.6GB swap in use, so this looks like memory pressure/swapping, not a training error. No thermal warning (`pmset -g therm`), process still healthy (PID 39504, ~101min CPU time), no errors/traceback in the log. Revised total-time estimate if this rate holds: ~15-16h from launch (up from the original ~12-13h), finishing roughly mid-morning tomorrow rather than overnight. No loss/eval values are appearing in the log text itself (only tqdm progress bars) - likely `transformers` log verbosity suppressing `Trainer`'s periodic `{'loss': ...}` prints rather than a real absence of logging; eval only runs once at the very end anyway (`eval_strategy="epoch"`, 1 epoch total), so no eval WER/CER yet either way. |
+
 *(updated as the run progresses - see notes below on update cadence. An hourly session-local loop, job `ff7d261c`, is checking this automatically now.)*
 
 ## A note on update cadence
