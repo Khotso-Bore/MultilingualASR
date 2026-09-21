@@ -373,6 +373,34 @@ Fixed 200-clip test samples (seed 42), directly comparable across rows:
 - Still a laptop pilot: 12% of available data, 10s clip cap. Stage 1 on GPU
   remains the real run.
 
+### Reference vs. model output examples (Wav2Vec2 pilot v2, NCHLT test)
+
+Real rows from `results/preds_pilot_v2/wav2vec2-final_nchlt_test.csv`, picked
+to show the honest range at WER 0.332 / CER 0.074 - not cherry-picked to only
+the best cases:
+
+| Reference | Hypothesis |
+|---|---|
+| i fanela u dzhiela nzhele | i fanela u dzhiela nzhele *(exact match)* |
+| ya u sumbedzwa tshirunzi na | ya u sumbedzwa tshirunzi na *(exact match)* |
+| na vhuḓifhinduleli kha vhashumi nahone | na vhuḓifhenduleli kha vhashumi na hone |
+| vhulimi zwine zwa khou bvelela | vhulimi zwine zwa khou bvelela *(exact match)* |
+| havhudi vhune ha sa tou | havhuḓivhune ha sa to u |
+| tsha kale musi vhasidzana vha | tshakale musi vha sidzana vha |
+
+Errors cluster around word-boundary shifts and single-vowel/diacritic swaps
+(vhuḓifhinduleli -> vhuḓifhenduleli, havhudi -> havhuḓivhune), not garbled or
+unrelated output - consistent with the S:D:I error model measured above.
+
+**Whisper's equivalent table is still pending** - the full-scale run
+(`notes/whisper-full-scale-run-log.md`) has no saved predictions yet, and
+generating them now would mean loading a second model into memory alongside
+training while the machine is already swap-constrained (see that file's
+21:15 entry - 23.9GB/24.6GB swap in use). Will add once the run finishes and
+`evaluate_wav2vec2_ven.py`-style predictions are saved for Whisper (or via
+`zero_shot_baseline_ven.py --model results/whisper-ven-pilot-v3/final
+--save-predictions`, since that script's `pipeline()` call accepts a local
+checkpoint path).
 
 Pilot: Wav2Vec2 XLS-R-300M, 5,000 NCHLT train clips (<= 10 s), 3 epochs, on an
 M4 MacBook (MPS). NOT the real Stage 1 (60k clips, 10 epochs, GPU) - a proof
