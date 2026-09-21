@@ -39,8 +39,9 @@ flag immediately here if the real step-rate looks off once training starts.
 | Time | Status |
 |---|---|
 | 15:11 | Launched (1 epoch, resumed from pilot v2). Data mapping/filtering in progress (~60k raw clips). |
+| 15:26 | Still preprocessing - eval-set mapping done (500 clips), now filtering the full 60,087-clip train pool by the 10s length cap. Training hasn't started yet. No errors. |
 
-*(updated as the run progresses - see notes below on update cadence)*
+*(updated as the run progresses - see notes below on update cadence. An hourly session-local loop, job `ff7d261c`, is checking this automatically now.)*
 
 ## A note on update cadence
 
