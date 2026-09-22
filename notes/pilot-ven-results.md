@@ -154,6 +154,88 @@ From `results/preds_full/*.csv` via `ErrorModel.from_prediction_files`
   (`src/error_propagation/run_degradation_study_ven.py`) via
   `--error-model results/preds_full/final_nchlt_test.csv results/preds_full/final_anv_dev_test.csv`.
 
+## Objective 2: data augmentation (SpecAugment + speed perturbation)
+
+Implemented in `src/asr/audio_augment_ven.py` (speed perturbation, numpy-only)
+and enabled via `--augment`/`--spec-augment` flags added to both pilot
+scripts. Speed perturbation adds 0.9x/1.1x resampled copies of every
+training clip (3x the training data, matching Biswas et al. 2022's method);
+SpecAugment uses HuggingFace's own built-in `apply_spec_augment` /
+`mask_time_prob` / `mask_feature_prob` config (both `Wav2Vec2Config` and
+`WhisperConfig` support this natively - no need to hand-roll the masking).
+Both were smoke-tested end-to-end (10 clips, 1 epoch) before committing to a
+real run.
+
+**Comparison run**: identical config to the original documented Wav2Vec2
+pilot v1 (`--train-clips 5000 --eval-clips 500 --epochs 3`, fresh
+`facebook/wav2vec2-xls-r-300m`, no ANV), with only `--augment --spec-augment`
+added - so augmentation is the *only* variable that changed. Training-time
+eval (mixed with the 3x-expanded set, ~15k clips after augmentation):
+WER 0.415 / CER 0.097. Took 6h26m on the M4 (vs. pilot v1's un-augmented
+100min - the 3x data cost roughly 4-6x the wall time here, partly the
+expected data increase and partly the swap pressure from the concurrent
+Whisper full-scale run finishing around the same window).
+
+**Standardized comparison** (200-clip NCHLT test / ANV dev_test, seed 42 -
+same fixed sets as every other row in this file):
+
+| Model | NCHLT WER | NCHLT CER | ANV WER | ANV CER |
+|---|---|---|---|---|
+| Pilot v1, no augmentation (5k clips, 3 ep) | 0.614 | 0.151 | 0.851 | 0.257 |
+| **Pilot v1 + SpecAugment + speed perturbation (same config)** | **0.269** | **0.060** | 0.871 | 0.287 |
+
+**Result: augmentation works, clearly, on the in-domain data.** NCHLT WER
+more than halved (0.614 -> 0.269, a 56% relative reduction) from this one
+change alone, with no other config difference. ANV stayed flat/slightly
+worse (0.851 -> 0.871) - expected, since neither run's training data
+included any ANV clips at all (both are being evaluated out-of-domain on a
+never-seen speech style); augmentation of NCHLT-only training data doesn't
+transfer to a different domain it never saw, which is a sensible result, not
+a contradiction of the augmentation finding.
+
+Per Seani's model-selection guidance - this candidate technique worked
+clearly at pilot scale, so it is now validated and worth carrying into any
+future full-scale run, rather than being dropped.
+
+Real examples (`results/preds_augment/wav2vec2-final_nchlt_test.csv`, first
+20 of 200, not cherry-picked; exact-match rate 63/200 = 31.5% - clearly
+below Whisper full-scale's 65.5%, since this is still the much smaller/
+weaker CTC model, just a large relative improvement over its own baseline):
+
+| # | Reference | Hypothesis | Row WER |
+|---|---|---|---|
+| 1 | i fanela u dzhiela nzhele | i fanela u dzhielanzhela | 0.40 |
+| 2 | na vhuḓifhinduleli kha vhashumi nahone | na vhuḓifhinduleli kha vhashumi nahone *(exact)* | 0.00 |
+| 3 | na u vhambedzea na dza | na u vhambedzeana dza | 0.40 |
+| 4 | ya u sumbedzwa tshirunzi na | ya u sumbedzwa tshirunzi na *(exact)* | 0.00 |
+| 5 | vhulimi zwine zwa khou bvelela | vhulimi zwine zwa khou bvelela *(exact)* | 0.00 |
+| 6 | havhudi vhune ha sa tou | havhuḓi vhune ha sa tou | 0.20 |
+| 7 | tsha kale musi vhasidzana vha | tshakale musi vhasedzana vha | 0.60 |
+| 8 | humiselwa kha muiti wa khumbelo | homiselwa kha muiti wa khumbelo | 0.20 |
+| 9 | oweleaho wa matombo a linton | owelaho wa matombo a ḽi nthoni | 0.60 |
+| 10 | zwa wela fhasi hadzo kha | zwa wela fhasi hadzo kha *(exact)* | 0.00 |
+| 11 | wa tshelede ya u unḓa | wa tshelede ya u unwa | 0.20 |
+| 12 | na mugudisi wa u bambela | na mugudisi wa u bambela *(exact)* | 0.00 |
+| 13 | lwone holu lwanga lu a | lone ho lulwa nga luwa | **1.00** |
+| 14 | kona u ṅwala na u | kona u ṅwala na u *(exact)* | 0.00 |
+| 15 | tambudzwa ndi nga u sedzulusa | tambudzwa ndi nga u sedzulusa *(exact)* | 0.00 |
+| 16 | na vhuhole kana u thogomelwa | na vhuhole kana uthogomelwaho | 0.40 |
+| 17 | u rekhoda kha redzhisitara ya | urikhoda kha redzhisitara ya | 0.40 |
+| 18 | nekedza tshumelo kha vhaaluwa ho | nekedza tshumelo kha vhaaluwa ho *(exact)* | 0.00 |
+| 19 | a nga dzhia tsheo ya | a nga dzhia tsheo ya *(exact)* | 0.00 |
+| 20 | lushaka hune ha vhonala na | lushaka hune ha vhonala na u | 0.20 |
+
+A visible pattern in the errors: several are word-boundary merges (rows 1,
+3, 7, 8, 17 - "dzhiela nzhele"->"dzhielanzhela") rather than wrong content -
+a known CTC decoding tendency, not new here (the same merged-word pattern
+already appears in pilot v1's un-augmented ANV predictions, see
+`results/preds_pilot/wav2vec2-final_anv_dev_test.csv`), so this isn't a
+regression augmentation introduced.
+
+**Caveat**: this is one comparison run at pilot scale on Wav2Vec2 only -
+Whisper's augmentation comparison hasn't been run yet (queued; the code is
+already in place in `pilot_finetune_whisper_mps_ven.py`, same flags).
+
 ## Whisper pilot v2 (rescoped) - best pilot-scale result
 
 `src/asr/pilot_finetune_whisper_mps_ven.py --resume-from results/whisper-ven-pilot/final
