@@ -20,8 +20,9 @@ import argparse
 from pathlib import Path
 
 import numpy as np
+import soundfile as sf
 import torch
-from datasets import Audio, Features, Value, load_dataset
+from datasets import Audio, Dataset, Features, Value, load_dataset
 from jiwer import cer, wer
 from transformers import (
     Trainer,
@@ -34,6 +35,7 @@ from transformers import (
 
 import sys
 sys.path.insert(0, str(Path(__file__).resolve().parent))
+from audio_augment_ven import SPEED_RATES, speed_perturb
 
 REPO_ROOT = Path(__file__).resolve().parents[2]
 DATA = REPO_ROOT / "dataset" / "processed"
@@ -59,6 +61,24 @@ def main(args):
     ds["train"] = ds["train"].shuffle(seed=42).select(range(min(args.train_clips, len(ds["train"]))))
     ds["eval"] = ds["eval"].shuffle(seed=42).select(range(min(args.eval_clips, len(ds["eval"]))))
 
+    if args.augment:
+        # speed perturbation (proposal Objective 2, §4.3): add 0.9x/1.1x copies
+        # of every training clip - eval set is left untouched, we only want
+        # more/varied training signal, not to change what "correct" means.
+        paths = ds["train"].cast_column("audio", Audio(decode=False))["audio"]
+        transcripts = ds["train"]["transcript"]
+        expanded = []
+        for p, t in zip(paths, transcripts):
+            array, sr = sf.read(p["path"])
+            assert sr == 16000, f"expected 16kHz audio, got {sr}Hz for {p['path']}"
+            array = array.astype(np.float32)
+            expanded.append({"array": array, "transcript": t})
+            for rate in SPEED_RATES:
+                expanded.append({"array": speed_perturb(array, rate), "transcript": t})
+        ds["train"] = Dataset.from_list(expanded)
+        print(f"augmentation: {len(paths)} clips -> {len(expanded)} "
+              f"(speed {SPEED_RATES} added)")
+
     tokenizer = Wav2Vec2CTCTokenizer.from_pretrained(TOKENIZER_DIR)
     feature_extractor = Wav2Vec2FeatureExtractor(
         feature_size=1, sampling_rate=16000, padding_value=0.0,
@@ -66,14 +86,20 @@ def main(args):
     processor = Wav2Vec2Processor(feature_extractor=feature_extractor, tokenizer=tokenizer)
 
     def prepare(batch):
-        samples = batch["audio"].get_all_samples()
-        array = samples.data.numpy().squeeze()
+        if "array" in batch:
+            array = np.asarray(batch["array"])
+        else:
+            samples = batch["audio"].get_all_samples()
+            array = samples.data.numpy().squeeze()
         batch["input_values"] = processor(array, sampling_rate=16000).input_values[0]
         batch["input_length"] = len(batch["input_values"])
         batch["labels"] = processor.tokenizer(batch["transcript"]).input_ids
         return batch
 
-    ds = ds.map(prepare, remove_columns=ds["train"].column_names)
+    # train/eval may now have different column names (augment adds "array"
+    # instead of "audio"), so map each split separately instead of ds.map()
+    ds["train"] = ds["train"].map(prepare, remove_columns=ds["train"].column_names)
+    ds["eval"] = ds["eval"].map(prepare, remove_columns=ds["eval"].column_names)
 
     if args.max_input_seconds:
         max_len = int(args.max_input_seconds * 16000)
@@ -119,6 +145,17 @@ def main(args):
             ignore_mismatched_sizes=True,
         )
     model.freeze_feature_encoder()
+
+    if args.spec_augment:
+        # HuggingFace's own SpecAugment (Park et al., 2019) implementation -
+        # config is read dynamically each forward pass, so setting it here
+        # (fresh or resumed model) is enough, no need to touch model init.
+        model.config.apply_spec_augment = True
+        model.config.mask_time_prob = args.mask_time_prob
+        model.config.mask_feature_prob = args.mask_feature_prob
+        print(f"SpecAugment enabled: mask_time_prob={args.mask_time_prob} "
+              f"mask_feature_prob={args.mask_feature_prob}")
+
     model = model.to(device)
 
     out_dir = OUTPUT_DIR if not args.resume_from else OUTPUT_DIR.parent / (OUTPUT_DIR.name + "-v2")
@@ -184,5 +221,12 @@ if __name__ == "__main__":
                         help="path to a previous pilot final dir to continue training from")
     parser.add_argument("--include-anv", action="store_true",
                         help="mix ANV train/dev CSVs into the data (still capped by max-input-seconds)")
+    parser.add_argument("--augment", action="store_true",
+                        help="speed perturbation (Objective 2): add 0.9x/1.1x copies of every "
+                             "training clip (3x the training data, eval set untouched)")
+    parser.add_argument("--spec-augment", action="store_true",
+                        help="enable HuggingFace's built-in SpecAugment (Objective 2) on the encoder")
+    parser.add_argument("--mask-time-prob", type=float, default=0.05)
+    parser.add_argument("--mask-feature-prob", type=float, default=0.05)
     args = parser.parse_args()
     main(args)
