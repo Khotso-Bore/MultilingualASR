@@ -1,6 +1,85 @@
 # Tshivenda MPS Pilot Fine-Tune - Results
 
-## Whisper pilot v2 (rescoped) - best ASR result across every pilot
+## Whisper full-scale (final) - best ASR result overall, answers Objective 1
+
+`src/asr/pilot_finetune_whisper_mps_ven.py --resume-from results/whisper-ven-pilot-v2/final
+--include-anv --epochs 1 --learning-rate 5e-5 --train-clips 100000 --eval-clips 500`,
+resumed from pilot v2 (0.182/0.048), full NCHLT+ANV train pool (60,087 raw
+clips), 1 epoch, M4 MacBook (MPS), 11h21m34s training (~12.5h total with
+preprocessing - see `notes/whisper-full-scale-run-log.md` for the live run
+log). This is the real Objective 1 / Sub-question 1 headline number - full
+scale, not another laptop pilot. Checkpoint overwrote
+`results/whisper-ven-pilot-v2/final` (the resume-naming logic reuses the
+same `-v2` suffix regardless of how many times it's resumed from itself, so
+that path now holds this run's weights, not the smaller pilot's).
+
+Training-time eval (mixed NCHLT-validation + ANV-dev, not the fixed 200-clip
+test sets below): WER 0.111 / CER 0.032.
+
+Comparison (200-clip NCHLT test / ANV dev_test, seed 42 - same fixed sets as
+every other row in this file):
+
+| Model | NCHLT WER | NCHLT CER | ANV WER | ANV CER |
+|---|---|---|---|---|
+| Whisper Large v3 zero-shot | 1.108 | 0.763 | 1.072 | 0.501 |
+| Wav2Vec2 pilot v2 (7,325 clips, 8 total epochs) | 0.332 | 0.074 | 0.537 | 0.127 |
+| Whisper pilot v1 (5k NCHLT, 3 epochs) | 0.265 | 0.060 | - | - |
+| Whisper pilot v2 (7,325 clips, resumed) | 0.182 | 0.048 | - | - |
+| **Whisper full-scale (60k pool, resumed, 1 epoch)** | **0.103** | **0.032** | **0.256** | **0.108** |
+
+Roughly halves pilot v2's already-strong NCHLT WER (0.182 -> 0.103) and cuts
+the ANV gap by more than half (0.537 -> 0.256) with one additional epoch on
+~5x the data. Wav2Vec2 stays at its pilot-scale number as the comparison
+point (see `notes/whisper-full-scale-run-log.md` for why only Whisper got
+pushed to full scale - compute constraints, and Whisper was already the
+clearly stronger architecture).
+
+### Reference vs. hypothesis examples (full-scale checkpoint, real predictions)
+
+From `results/preds_full/final_nchlt_test.csv` / `final_anv_dev_test.csv`
+(first rows of 200 per corpus, not cherry-picked):
+
+NCHLT test (WER 0.103) - short read-speech, now frequently exact:
+
+| Reference | Hypothesis |
+|---|---|
+| i fanela u dzhiela nzhele | i fanela u dzhiela nzhele *(exact)* |
+| na vhuḓifhinduleli kha vhashumi nahone | na vhuḓifhinduleli kha vhashumi nahone *(exact)* |
+| na u vhambedzea na dza | na u vhambedzea na dza *(exact)* |
+| ya u sumbedzwa tshirunzi na | ya u sumbedzwa tshirunzi na *(exact)* |
+| vhulimi zwine zwa khou bvelela | vhulimi zwine zwa khou bvelela *(exact)* |
+
+ANV dev_test (WER 0.256) - longer spontaneous speech, the harder domain;
+errors are almost all single word-boundary splits or a single suffix swap,
+not garbled output:
+
+| Reference (excerpt) | Hypothesis (excerpt) |
+|---|---|
+| ...ngauri hu ḓovha hu kale ni tshi davhidzana naye na humbula u sokou muthusa ngeno... | ...ngauri hu ḓo vha hu kale ni tshi davhidzana nae na humbula u sokou mu thusa ngeno... |
+| ahuna khaelo na nthihi ine ya ṋetshedza tsireledzo yo fhelelaho... | ahuna khaelo na nthihi ine ya ṋetshedzwa tsireledzo yo fhelelaho... |
+
+**Diacritics update**: ṋ now appears correctly in both refs and hyps (e.g.
+"yaṋu", "nṋe", "ṋetshedza") - resolves the pilot v2 finding that ṋ was never
+emitted (0 of 84 occurrences at that scale). The extra data and epoch fixed it.
+
+### Re-measured error model (full-scale predictions)
+
+From `results/preds_full/*.csv` via `ErrorModel.from_prediction_files`
+(`src/error_propagation/corrupt_transcripts_ven.py`):
+
+- S:D:I = **54.4 : 16.5 : 29.0** (pilot v2 was 64.4 : 32.7 : 2.9) - as the
+  model got stronger, deletions fell further and, notably, **insertions
+  jumped from near-zero to nearly a third of all errors** - a real shift in
+  error character, not just magnitude. Consistent with a model confident
+  enough to occasionally over-generate rather than only drop hard words.
+- Top confusion pairs still mostly single-word splits/particle swaps
+  (u -> hu/uri, nga -> ngauri, unga -> nga), same linguistic flavor as
+  before, not random noise.
+- This is the error model now used for the error-propagation study
+  (`src/error_propagation/run_degradation_study_ven.py`) via
+  `--error-model results/preds_full/final_nchlt_test.csv results/preds_full/final_anv_dev_test.csv`.
+
+## Whisper pilot v2 (rescoped) - best pilot-scale result
 
 `src/asr/pilot_finetune_whisper_mps_ven.py --resume-from results/whisper-ven-pilot/final
 --include-anv --epochs 5 --learning-rate 5e-5 --train-clips 12000 --eval-clips 500`,
