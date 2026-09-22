@@ -36,27 +36,102 @@ clearly stronger architecture).
 
 ### Reference vs. hypothesis examples (full-scale checkpoint, real predictions)
 
-From `results/preds_full/final_nchlt_test.csv` / `final_anv_dev_test.csv`
-(first rows of 200 per corpus, not cherry-picked):
+Full data: `results/preds_full/final_nchlt_test.csv` / `final_anv_dev_test.csv`
+(200 rows each, gitignored - regenerate with `zero_shot_baseline_ven.py
+--model results/whisper-ven-pilot-v2/final --save-predictions results/preds_full`).
+Rows below are in sampled order (seed 42), **not cherry-picked** - the good,
+the mediocre, and the bad are all included so this is an honest picture, not
+a highlight reel.
 
-NCHLT test (WER 0.103) - short read-speech, now frequently exact:
+**Exact-match rate**: NCHLT 131/200 (65.5%), ANV 25/200 (12.5%) - the domain
+gap between short read-speech and long spontaneous speech is real and large,
+not just a WER-number abstraction.
 
-| Reference | Hypothesis |
-|---|---|
-| i fanela u dzhiela nzhele | i fanela u dzhiela nzhele *(exact)* |
-| na vhuḓifhinduleli kha vhashumi nahone | na vhuḓifhinduleli kha vhashumi nahone *(exact)* |
-| na u vhambedzea na dza | na u vhambedzea na dza *(exact)* |
-| ya u sumbedzwa tshirunzi na | ya u sumbedzwa tshirunzi na *(exact)* |
-| vhulimi zwine zwa khou bvelela | vhulimi zwine zwa khou bvelela *(exact)* |
+**NCHLT test (WER 0.103)** - first 30 of 200:
 
-ANV dev_test (WER 0.256) - longer spontaneous speech, the harder domain;
-errors are almost all single word-boundary splits or a single suffix swap,
-not garbled output:
+| # | Reference | Hypothesis | Row WER |
+|---|---|---|---|
+| 1 | i fanela u dzhiela nzhele | i fanela u dzhiela nzhele *(exact)* | 0.00 |
+| 2 | na vhuḓifhinduleli kha vhashumi nahone | na vhuḓifhinduleli kha vhashumi nahone *(exact)* | 0.00 |
+| 3 | na u vhambedzea na dza | na u vhambedzea na dza *(exact)* | 0.00 |
+| 4 | ya u sumbedzwa tshirunzi na | ya u sumbedzwa tshirunzi na *(exact)* | 0.00 |
+| 5 | vhulimi zwine zwa khou bvelela | vhulimi zwine zwa khou bvelela *(exact)* | 0.00 |
+| 6 | havhudi vhune ha sa tou | havhuḓi vhune ha sa tou | 0.20 |
+| 7 | tsha kale musi vhasidzana vha | tshakale musi vhasidzana vha | 0.40 |
+| 8 | humiselwa kha muiti wa khumbelo | humiselwa kha muiti wa khumbelo *(exact)* | 0.00 |
+| 9 | oweleaho wa matombo a linton | owelaho wa matombo a ḽinthoni | 0.40 |
+| 10 | zwa wela fhasi hadzo kha | zwa wela fhasi hadzo kha *(exact)* | 0.00 |
+| 11 | wa tshelede ya u unḓa | wa tshelede ya u | 0.20 |
+| 12 | na mugudisi wa u bambela | na mugudisi wa u bammbela | 0.20 |
+| 13 | lwone holu lwanga lu a | lwone holu lwanga lu a *(exact)* | 0.00 |
+| 14 | kona u ṅwala na u | kona u ṅwala na u *(exact)* | 0.00 |
+| 15 | tambudzwa ndi nga u sedzulusa | tambudzwa ndi nga u sedzulusa *(exact)* | 0.00 |
+| 16 | na vhuhole kana u thogomelwa | na vhuhole kana vhuṱhogomelwaho | 0.40 |
+| 17 | u rekhoda kha redzhisitara ya | u rekhoda kha redzhisitara ya *(exact)* | 0.00 |
+| 18 | nekedza tshumelo kha vhaaluwa ho | nekedza tshumelo kha vhaaluwa ho *(exact)* | 0.00 |
+| 19 | a nga dzhia tsheo ya | a nga dzhia tsheo ya *(exact)* | 0.00 |
+| 20 | lushaka hune ha vhonala na | lushaka hune ha vhonala na *(exact)* | 0.00 |
+| 21 | vha ṋekane nga khophi yo | vha ṋekane nga khophi yo *(exact)* | 0.00 |
+| 22 | kana a sa tsha takalela | kana a sa tsha takalela *(exact)* | 0.00 |
+| 23 | elimi | ilimi | 1.00 |
+| 24 | kana u khethulula zwi tshi | kana u khethulula zwi tshi *(exact)* | 0.00 |
+| 25 | vhadzulapo vha tea u kwamiwa | vhadzulapo vha tea u kwamiwa *(exact)* | 0.00 |
+| 26 | mirado ya tshigwada tsha nnda | mirado ya tshigwada tsha nnḓa | 0.20 |
+| 27 | thoma wa kwamana na vhadzulapo | thoma wa kwamana na vhadzulapo *(exact)* | 0.00 |
+| 28 | u takadza dzikhasitama namusi bannga | u takadza dzikhasitama namusi bannga *(exact)* | 0.00 |
+| 29 | zwa dzinnu dza lushaka zwo | zwa dzinnu dza lushaka zwo *(exact)* | 0.00 |
+| 30 | a si na vhukwamani na | a si na vhukwamani na *(exact)* | 0.00 |
 
-| Reference (excerpt) | Hypothesis (excerpt) |
-|---|---|
-| ...ngauri hu ḓovha hu kale ni tshi davhidzana naye na humbula u sokou muthusa ngeno... | ...ngauri hu ḓo vha hu kale ni tshi davhidzana nae na humbula u sokou mu thusa ngeno... |
-| ahuna khaelo na nthihi ine ya ṋetshedza tsireledzo yo fhelelaho... | ahuna khaelo na nthihi ine ya ṋetshedzwa tsireledzo yo fhelelaho... |
+Note row 23 (`elimi` -> `ilimi`, WER 1.00): a single-word clip is an
+all-or-nothing WER score even though only one letter differs - a reminder
+that word-level WER can overstate severity on very short clips. Rows 6, 9,
+16, 26 show the typical error shape at this scale: one diacritic/cluster
+slip (havhudi->havhuḓi, nnda->nnḓa) or a word-boundary shift, not garbled
+output.
+
+**ANV dev_test (WER 0.256)** - first 25 of 200 (harder domain: longer,
+spontaneous speech; excerpts truncated to ~90 chars for table width, full
+text in the CSV):
+
+| # | Reference | Hypothesis | Row WER |
+|---|---|---|---|
+| 1 | khombo ndi musi vhukonani ho no kalula ni wane khonani yaṋu iṅwe hanefho online a tshi... | khombo ndi musi vhukonani ho no kalula ni wane khonani yaṋu iṅwe hanefho online a tshi... | 0.18 |
+| 2 | ahuna khaelo na nthihi ine ya ṋetshedza tsireledzo yo fhelelaho tsireledzo ya percent | ahuna khaelo na nthihi ine ya ṋetshedzwa tsireledzo yo fhelelaho tsireledzo ya percent | 0.08 |
+| 3 | ee nṋe ndi soko vhona unga vhaswa vha hune nda dzula hone vha funa zwiambaro zwa musala... | ee nṋe ndi soko vhona unga vhaswa vha hune nda dzula hone vha funa zwiambaro zwa musala... | 0.18 |
+| 4 | u sa tsireledzea ha zwiḽiwa zwi tshi khou ṱuṱuwedzwa nga kiḽima zwi ita uri mutakalo wa... | u sa tsireledzea ha zwiḽiwa zwi tshi khou ṱuṱuwedzwa nga kilima zwi ita uri mutakalo wa... | 0.13 |
+| 5 | nṋe ndi vhona unga maapuḽa dzi banana maswiri mapierre dzi nḓirivhe ndi magwavha ndi vh... | nṋe ndi vhona u nga maapula dzi banana maswiri maphiere dzi nḓirivhe ndi magwavha ndi v... | 0.24 |
+| 6 | fhedziha zwenezwi miṅwaha i tshi khou ḓi ya o ḓo shandukisa muhumbulo musi a tshi vhona... | fhedziha zwenezwi miṅwaha i tshi khou ḓi ya o ḓo shandukisa muhumbulo musi a tshi vhona... *(exact)* | 0.00 |
+| 7 | ro pembela nga maḓikiṱa midavhini hombo ḓivha na ḓikiṱa ḽihulu nga ḓuvha ḽi tevhelaho ḽ... | ro pembela nga maḓiki ṱa midavheni ho vha ho ṱangana vhathu vho fhambananaho na vharang... | **0.64** |
+| 8 | kha vhupo ha hashu mbudzi dzi shumiswa kha tshisevho vhaṅwe vha shumisa na kha mafhi vh... | kha vhupo ha hashu ngudzo dzi shumiswa kha tshisevho vhaṅwe vha shumisana kha maanḓa vh... | 0.21 |
+| 9 | ee ngeno mahayani zwo ḓowelea ngeno u tshi fanela u to buba uri u kone u vha kha vhuimo... | ee ngeno mahayani zwo ḓowelea ngeno u tshi fanela u tou buba uri u kone u vha kha vhuim... | 0.05 |
+| 10 | ee vhuponi hashu dzi hone dzi kiḽiniki dza dzimobaiḽi dzine dza ḓa dzi ngavha dzi tshi... | ee vhuponi ha hashu dzi hone dzi kiḽiniki dza dzi mobaiḽi dzine dza ḓa dzi nga vha dzi... | 0.27 |
+| 11 | i si gathi yo fhiraho vharengi vha afrika | i si gathi yo fhiraho vharengi vha afrika *(exact)* | 0.00 |
+| 12 | ndi vhugai ine muswa a ḓo hola yone | vhugai ine muswa a ḓo hola yone | 0.12 |
+| 13 | ndi u ḓisa thekhinoḽodzhi i leludzaho kha uri vhalwadze vha kone u wana faila dzavho ng... | ndi u ḓisa thekhinolodzhi iyo leludzaho kha uri vhalwadze vha kone u wana fhaela dzavho... | 0.17 |
+| 14 | vhaṅwe vha vha vha kho itela u dzi ḓivha musi dzo no ṱangana na dziṅwe u itela uri vhas... | vhaṅwe vha vha khou itelwa u dzi ḓivha musi dzo no ṱangana na dziṅwe u itela uri vha si... | 0.23 |
+| 15 | nṋe ndi vhona unga muthu u fanela u vha o ṱamba zwanḓa a tshetshelela ṋama fhethu ho ku... | nṋe ndi vhona u nga muthu u fanela u vha o ṱamba zwanḓa a tshi tshelela ṋama fhethu ho... | 0.17 |
+| 16 | khaelo iṅwe na iṅwe yo shumiswaho kha mbekanyamushumo ya u haela vhathu vhanzhi afrika... | khaelo iṅwe na iṅwe yo shumiswaho kha mbekanyamushumo ya u haela vhathu vhanzhi afrika... | 0.10 |
+| 17 | vho humbela vho ramabindu maṱuku u ita tshipiḓa tshavho sa izwi vha na tshikhala tsha u... | vho humbela vhoramabindu maṱuku u ita tshipiḓa tshavho sa izwi vha na tshikhala tsha u... | 0.08 |
+| 18 | u ya wana vhenevho vhathu vhane vha kona u runga vha tshi ṱoḓana na dzi rokho dzenedzi... | u ya wana vhane vha vhathu vhane vha kona u hunga vha tshi ṱoḓa na na dzi rogo dzine dz... | **0.45** |
+| 19 | tshanduko kha mitengo ya zwiḽiwa yo rekhodiwa u vha henefha kha phesenthe dza | tshanduko kha mitengo ya zwiḽiwa yo rekhodiwa u vha henefho kha phesenthe dza | 0.08 |
+| 20 | nṋe ndi ḓivha best med fedhealth nda dovha nda ḓivha momentum discovery na ya muvhuso g... | nṋe ndi ḓivha based aid um ndi ḓivha ndi ḓivha miṱhamu ndi si khavha ri na ya mvhuso ge... | **0.63** |
+| 21 | ndi vhona i songo fanela nga uri vhathu vha ḓo fhedzisela vha tshi vho ri itela zwithu... | ndi vhona i songo fanela ngauri vhathu vha ḓo fhedzisela vha tshi vho ri itela zwithu... | 0.12 |
+| 22 | nga o ḓo kona u rengisa mashango a nnḓa thani dzi swikaho dza zwikavhavhe nahone nga ts... | nga o ḓo kona u rengisa mashango a nnḓa thani dzi swikaho dza zwikavhavhe nahone nga ts... | 0.14 |
+| 23 | ndi nga luvhelela muthu uyo ane a kho nthusa uri a shumise ine ya vha kha lutingo lwang... | ndi nga luvhele dza muthu uyo ane a khou nthusa uri a shumise ine yavha kha luṱingo lwa... | 0.34 |
+| 24 | vho ṱalutshedza uri muhasho u dzhia maitele o fhelelaho na u ṋetshedza nyengedzedzo yo... | vho talutshedza uri muhasho u dzhia maitele o fhelelaho na u ṋetshedza nyengedzedzo yo... | 0.24 |
+| 25 | u ya nga vha muhasho wa pfunzo dza mutheo dbe vhagudi vha a funzwa na nga ha mikhwa yav... | u ya nga vha muhasho wa pfunzo dza mutheo dbe vhagudi vha a funzwa na nga ha mikhwa yav... *(exact)* | 0.00 |
+
+The bad cases are real, not swept under the rug: **rows 7 and 20 (WER 0.64
+and 0.63)** are genuine content divergence, not just word-boundary noise -
+row 20 in particular ("best med fedhealth ... momentum discovery" ->
+"based aid um ... miṱhamu") looks like the model struggling with
+code-switched English brand names embedded in Tshivenda speech, which this
+project's training data doesn't specifically target. Row 18 (0.45) mixes
+real substitutions with a garbled clause. These are the honest tail of the
+ANV distribution, not the norm (12.5% exact match, most other rows in the
+0.05-0.25 range), but they're exactly the kind of case the error-propagation
+study (`notes/tshivenda-error-propagation.md`) and Objective 6's reliability
+threshold exist to quantify.
 
 **Diacritics update**: ṋ now appears correctly in both refs and hyps (e.g.
 "yaṋu", "nṋe", "ṋetshedza") - resolves the pilot v2 finding that ṋ was never

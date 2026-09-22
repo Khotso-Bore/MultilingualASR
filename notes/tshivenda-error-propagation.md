@@ -27,6 +27,45 @@ expected from 1 epoch of a frozen linear probe, not a bug in the
 corruption/eval wiring (confirmed once the full run below produced real,
 varying, WER-sensitive numbers).
 
+## What the corrupted text actually looks like
+
+Not just numbers - real examples from `dataset/vukuzenzele/misinfo_proxy_ven.csv`,
+corrupted with the real full-scale Whisper error model, "mixed" mode, seed 42:
+
+**Example 1** (original): `U ya nga Minisṱa vha Muhasho wa Mutakalo, Dokotela
+Vho Joe Phaahla, nga ḽa 25 Lambamai Afrika Tshipembe ḽo rekhoda u engedzea
+nga 137% ha tshivhalo tshiswa tsha zwiwo zwa u kavhiwa nga vairasi ya COVI...`
+
+- WER 0.1: `...Dokotela Vho Joe Phaahla, ḽa 25 Lambamai Afrika Tshipembe ḽo
+  rekhoda u 60 engedzea nga 137%...` - a dropped word ("nga"), one inserted
+  number ("60"), otherwise intact.
+- WER 0.3: `...Dokutela Vho wavho, Joe Phaahla, ngauri ḽa Lambamii Afrika
+  guda Tshipembe lo rekhoda u engedzua dzi 137%...` - "Dokotela"->"Dokutela",
+  an inserted "wavho", "engedzea"->"engedzua dzi" - still readable, meaning
+  drifting.
+- WER 0.5: `...Dokutela Vho wavho, Joe Iṅwe ngauri vhuḓifari nḓivhadzo
+  Lambomai Afrika Tshipembu guda lo u engodzea ngauri...` - "Phaahla" (the
+  minister's actual surname) is gone, replaced by unrelated inserted words
+  ("Iṅwe", "vhuḓifari", "nḓivhadzo") - a named entity central to the
+  article's claim has been corrupted away.
+
+**Example 3** (original): `dzo ya khothe, vha Maanḓalanga a Vhutshu-tshisi
+ha Lushaka (NPA) vha na tshumelo yo khe-theaho ya u thusa vhone...`
+
+- WER 0.5: `...vha Maanḓalanga avha Vhutshu-tshisi ha Lushika (NPA) vha na
+  Iṅwe chumelo khayo ke-theaho yo u wone...` - the organisation acronym
+  "(NPA)" survives (numbers/acronyms are comparatively robust to this word-
+  level corruption model), but surrounding context words are increasingly
+  replaced by high-frequency corpus filler ("Iṅwe", "khayo") as WER climbs.
+
+The pattern across all three source examples: at WER 0.1 the text stays
+essentially readable with minor slips; by WER 0.3 word choice starts
+drifting in ways that could plausibly flip meaning; by WER 0.5 specific
+named entities (a minister's surname, in Example 1) get overwritten by
+generic corpus-frequent words - exactly the failure mode that would make a
+misinformation classifier's job harder, since names/entities are often what
+carries the claim.
+
 ## Results (5-fold grouped CV, mean macro F1)
 
 Clean-text baseline per fold: 0.578, 0.524, 0.559, 0.514, 0.555 (mean
