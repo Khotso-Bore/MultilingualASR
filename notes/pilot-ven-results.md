@@ -300,6 +300,25 @@ augmentation; the errors are ordinary substitutions/insertions
 (oweleaho->oweleaho a ḽi ṱoni, unḓa->uhu), consistent with normal ASR error
 shape rather than a decoding artifact.
 
+**Training progression on the same 5 clips** (epoch 2 -> epoch 3/final,
+the last two checkpoints Trainer kept):
+
+| Clip | Reference | Epoch 2/3 | Epoch 3/3 (final) |
+|---|---|---|---|
+| 1 | i fanela u dzhiela nzhele | i fanela u dzhiela nzhiela | i fanela u dzhiela nzhiela |
+| 2 | na vhuḓifhinduleli kha vhashumi nahone | na vhadifhinduleli kha vhashumi nahone | na vhudifhinduleli kha vhashumi nahone |
+| 3 | na u vhambedzea na dza | na vhambedzea na dza | na vhambedzea na dza |
+| 4 | ya u sumbedzwa tshirunzi na | ya u sumbedzwa tshirunzi na *(exact)* | ya u sumbedzwa tshirunzi na *(exact)* |
+| 5 | vhulimi zwine zwa khou bvelela | vhulimi zwine zwa khou bvelela *(exact)* | vhulimi zwine zwa khou bvelela *(exact)* |
+
+Unlike the two-stage run above, this model had **already mostly converged
+by epoch 2** - these 5 clips barely change between epoch 2 and the final
+epoch 3 (only clip 2's diacritic wobbles: vhadifhinduleli ->
+vhudifhinduleli, still not the correct vhuḓifhinduleli either way). That
+matches the modest epoch-by-epoch WER trend for this run (0.240 -> 0.220 ->
+0.206) - small, steady refinement rather than a visible turning point, the
+opposite shape from the two-stage run's sharp Stage-1-to-Stage-2 jump.
+
 **Both augmentation comparisons are now complete**: it helps both models,
 more for the weaker one (Wav2Vec2) than the stronger one (Whisper) - a
 sensible, consistent finding across the two architectures, answering
@@ -456,6 +475,36 @@ this file) and several run words together across most of the sentence
 (row 3, 8, 10) rather than just at isolated boundaries - the word-boundary
 weakness noted above compounds on longer, harder, out-of-specialization
 speech. Only 1/200 ANV rows is an exact match.
+
+### Training progression: the same 5 clips at every checkpoint
+
+To show *when* the model actually improved, not just the final WER, the
+same 5 fixed NCHLT test clips (the same ones used throughout this file)
+were transcribed with the intermediate epoch-2 checkpoint and the final
+epoch-3 checkpoint of both Stage 1 and Stage 2 (Trainer keeps the last 2
+epoch checkpoints by default - epoch 1 wasn't preserved, so this shows the
+back half of training, not the very start).
+
+| Clip | Reference | Stage 1, ep 2 | Stage 1, ep 3 (= Stage 2 start) | Stage 2, ep 2 | Stage 2, ep 3 (final) |
+|---|---|---|---|---|---|
+| 1 | i fanela u dzhiela nzhele | i fane u dzielandzhele | i fane u dzielandzhele | i fanela u dzhielandzhele | i fanela u dzhielandzhele |
+| 2 | na vhuḓifhinduleli kha vhashumi nahone | na vhudifhenduleli kha vhashvhuni na hone | na vhudifhenduleli kha vhashvhuni na hone | na vhuḓifenduleli kha vhashumi nahone | na vhuḓifenduleli kha vhashumi nahone |
+| 3 | na u vhambedzea na dza | na vhambedzea na dza | na vhambedzea na dza | na vhambedzea na dza | na vhambedzea na dza |
+| 4 | ya u sumbedzwa tshirunzi na | ya u sumbedzwa tshirundzi na | ya u sumbedzwa tshirundzi na | ya u sumbedzwa tshirunzi na *(exact)* | ya u sumbedzwa tshirunzi na *(exact)* |
+| 5 | vhulimi zwine zwa khou bvelela | vhulimi zwine zwa khou u bvelela | vhulimi zwine zwa khou bvelela *(exact)* | vhulimi zwine zwa khou bvelela *(exact)* | vhulimi zwine zwa khou bvelela *(exact)* |
+
+**What this actually shows**: Stage 1 barely moves between its own epoch 2
+and epoch 3 - clip 2's "vhashvhuni" (a real error, should be "vhashumi")
+and clip 1's dropped "-la" in "fanela" persist unchanged across both Stage 1
+snapshots. **The real jump happens the moment Stage 2 starts** - by Stage
+2's second epoch, clip 1 fixes "fane"->"fanela" and un-merges
+"dzielandzhele" partway, clip 2 fixes "vhashvhuni"->"vhashumi", and clip 4
+becomes an exact match. That is the model actually specializing on NCHLT,
+visibly, not just a number improving - Stage 1's job (broad combined-domain
+exposure) and Stage 2's job (NCHLT specialization) are doing visibly
+different things to the same sentences. Note clip 1's "dzielandzhele"
+word-merge survives all four checkpoints - the specific word-boundary
+weakness flagged above isn't something either stage fixes.
 
 ### Caveats
 
