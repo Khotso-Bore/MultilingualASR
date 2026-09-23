@@ -1,5 +1,51 @@
 # Tshivenda MPS Pilot Fine-Tune - Results
 
+## At a glance
+
+This file is organised roughly newest-important-result-first, then oldest
+pilot-history-last - it grew over several weeks of iteration, so here's a
+map. If you only read one table, read this one.
+
+**Headline numbers** (200-clip fixed NCHLT test / ANV dev_test, seed 42,
+same sets throughout):
+
+| Model | NCHLT WER | NCHLT CER | ANV WER | ANV CER | Section |
+|---|---|---|---|---|---|
+| Whisper Large v3, zero-shot (no fine-tuning) | 1.108 | 0.763 | 1.072 | 0.501 | below |
+| Wav2Vec2 XLS-R-300M, pilot-scale (7.3k clips) | 0.332 | 0.074 | 0.537 | 0.127 | "Pilot v2 update" |
+| Wav2Vec2 XLS-R-300M, pilot + augmentation (5k clips) | 0.269 | 0.060 | - | - | "Objective 2" |
+| Whisper, pilot-scale (7.3k clips) | 0.182 | 0.048 | - | - | "Whisper pilot v2" |
+| Whisper, pilot + augmentation (5k clips) | 0.217 | 0.052 | 0.755 | 0.207 | "Objective 2" |
+| Whisper, two-stage + LoRA (5k+5k clips) | 0.321 | 0.080 | 0.797 | 0.215 | "Objective 3" |
+| **Whisper, full-scale (60k clips) - the headline result** | **0.103** | **0.032** | **0.256** | **0.108** | "Whisper full-scale" |
+| Wav2Vec2 XLS-R-300M, full-scale (60k clips) | *in progress* | | | | "Whisper full-scale"-equivalent, see the run log |
+
+**How to navigate the rest of this file:**
+- **"Whisper full-scale"** (just below) - Objective 1's actual answer for
+  Whisper, with the real reference-vs-hypothesis examples and re-measured
+  error model that everything else in this project builds on.
+- **"Objective 2"** - does SpecAugment + speed perturbation help? Yes, for
+  both models, more for the weaker one. Includes training-progression tables
+  showing the *same 5 clips* transcribed at different training checkpoints.
+- **"Objective 3"** - does two-stage + LoRA fine-tuning beat single-stage?
+  Answered honestly: no, not in this pilot-scale test, with the confound
+  (LoRA capacity vs. staging) explained and a genuine positive signal
+  (catastrophic-forgetting resistance) called out separately.
+- **Everything from "Whisper pilot v2" onward** is the historical ASR model
+  search - the 7 architectures tried (4 collapsed: AfriHuBERT, MMS, w2v-BERT,
+  data2vec-audio; 2 worked at pilot scale: UniSpeech, Wav2Vec2; Whisper
+  won outright) - kept as the debugging record, not superseded.
+
+**Related files, not duplicated here:**
+- `notes/whisper-full-scale-run-log.md` - live progress log of the Whisper
+  (and now Wav2Vec2) full-scale training runs themselves.
+- `notes/tshivenda-error-propagation.md` - Objectives 5/6, how ASR error
+  rate degrades misinformation classification, with real corrupted-text
+  examples at each WER level.
+- `notes/tshivenda-classifier-proxy.md` - Objective 4, the AfroXLM-RoBERTa
+  vs. XLM-RoBERTa classification result and the synthetic proxy dataset
+  built to replace the lost Mukwevho dataset.
+
 ## Whisper full-scale (final) - best ASR result overall, answers Objective 1
 
 `src/asr/pilot_finetune_whisper_mps_ven.py --resume-from results/whisper-ven-pilot-v2/final
@@ -231,6 +277,27 @@ a known CTC decoding tendency, not new here (the same merged-word pattern
 already appears in pilot v1's un-augmented ANV predictions, see
 `results/preds_pilot/wav2vec2-final_anv_dev_test.csv`), so this isn't a
 regression augmentation introduced.
+
+**Training progression on the same 5 clips** (epoch 2 -> epoch 3/final):
+
+| Clip | Reference | Epoch 2/3 | Epoch 3/3 (final) |
+|---|---|---|---|
+| 1 | i fanela u dzhiela nzhele | i fanela u dzhielanzhela | i fanela u dzhielanzhela |
+| 2 | na vhuḓifhinduleli kha vhashumi nahone | na vhuḓifhinduleli kha vhashumi nahone *(exact)* | na vhuḓifhinduleli kha vhashumi nahone *(exact)* |
+| 3 | na u vhambedzea na dza | na u vhambedzea na dza *(exact)* | na u vhambedzeana dza |
+| 4 | ya u sumbedzwa tshirunzi na | ya u sumbedzwa tshirunzi na *(exact)* | ya u sumbedzwa tshirunzi na *(exact)* |
+| 5 | vhulimi zwine zwa khou bvelela | vhulimi zwine zwa khou bvelela *(exact)* | vhulimi zwine zwa khou bvelela *(exact)* |
+
+Almost static between the two checkpoints, same as the Whisper augmentation
+run - but honestly, **clip 3 actually gets slightly worse** at the final
+epoch (exact match at epoch 2 -> a new word-merge, "vhambedzea na"->
+"vhambedzeana", by epoch 3). This is real: `load_best_model_at_end=True`
+selects the best checkpoint by the eval-set WER, not by these 5 clips
+specifically, so a small regression on some individual clips while the
+overall corpus WER still improves is expected and normal, not a sign of a
+bug - a useful reminder that any single-clip story is a sample, not the
+whole picture, which is exactly why the full 200-clip tables above matter
+more than a handful of examples on their own.
 
 **Caveat**: the above is one comparison run at pilot scale on Wav2Vec2 -
 Whisper's own augmentation comparison follows immediately below.
