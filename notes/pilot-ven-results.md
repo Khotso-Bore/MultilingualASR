@@ -236,6 +236,174 @@ regression augmentation introduced.
 Whisper's augmentation comparison hasn't been run yet (queued; the code is
 already in place in `pilot_finetune_whisper_mps_ven.py`, same flags).
 
+## Objective 3: two-stage fine-tuning + LoRA (Sub-question 3)
+
+Answers: does a two-stage fine-tuning strategy (Stage 1: pre-train on all
+available combined target-language audio; Stage 2: fine-tune specifically on
+labeled NCHLT data) beat single-stage fine-tuning, using LoRA throughout to
+avoid catastrophic forgetting (both per proposal §4.4)?
+
+### What was built and how it was trained
+
+LoRA support added to `pilot_finetune_whisper_mps_ven.py` via `peft`
+(installed fresh - wasn't in the environment before): `--lora` wraps a
+fresh/resumed base model with new adapters (rank 8, alpha 16, on the
+attention `q_proj`/`v_proj` layers only - ~885K of 242M parameters
+trainable, 0.36%); `--lora-adapter-from` loads a previously-saved adapter
+and continues training it on top of the same frozen base, which is what
+"Stage 2 continuing from Stage 1" actually means mechanically - the base
+weights never change across either stage, only the small adapter does.
+Both code paths were smoke-tested end-to-end (10 clips, 1 epoch, save +
+reload) before any real run.
+
+- **Stage 1**: fresh `openai/whisper-small` + LoRA, 5,000 clips combined
+  from NCHLT+ANV (`--include-anv`), 3 epochs.
+- **Stage 2**: load Stage 1's saved adapter, continue training it on
+  NCHLT-only clips (same 5,000-clip set the single-stage baseline uses, for
+  a fair comparison), 3 more epochs.
+- **Merge + eval**: `peft`'s `merge_and_unload()` folds the adapter back
+  into the base for a normal checkpoint, then scored on the same fixed
+  200-clip NCHLT test / ANV dev_test sets (seed 42) as every other row in
+  this file.
+
+### Two real bugs hit along the way (both fixed, not hidden)
+
+1. **LoRA learning rate too low.** First Stage 1 attempt reused the
+   script's full-fine-tune default (`1e-5`) - LoRA adapters start near-zero
+   effect and need a much higher rate to move in only 3 epochs. Result: WER
+   *got worse each epoch relative to where it should be* and finished at
+   0.947 (barely better than zero-shot's 1.108, nowhere near usable).
+   Diagnosed from the epoch-by-epoch trend, not guessed - fixed by
+   relaunching with `--learning-rate 3e-4` (30x higher, standard LoRA
+   territory). Epoch 1 alone then already beat the entire first attempt's
+   3-epoch result (WER 0.628 vs 0.947).
+2. **Merged checkpoint lost its generation config.** The first merge script
+   loaded a *fresh* `WhisperForConditionalGeneration` as the base to merge
+   the adapter onto, but never re-applied `language="sw"`/
+   `task="transcribe"`/`forced_decoder_ids=None` (the training script sets
+   these on its own model instance, which doesn't carry through when you
+   reload the base separately for merging). Result: standardized eval came
+   back at **WER 1.989** - impossible given the single logged example was a
+   near-exact match, so this was caught immediately from the numbers not
+   matching the qualitative evidence, not assumed correct. Fixed by setting
+   the generation config on the base *before* merging and verifying it was
+   actually present in the saved `generation_config.json` before re-running
+   the eval (`language/task/forced_decoder_ids: sw transcribe None`).
+
+### Results
+
+Stage 1 training-time eval (mixed NCHLT+ANV validation set): WER
+1.226 (bad LR) -> relaunched -> 0.628 -> 0.544 -> **0.517** (epochs 1-3,
+fixed LR). Stage 2 training-time eval (NCHLT-only validation): 0.450 ->
+0.377 -> **0.360** (epochs 1-3).
+
+**Standardized comparison** (200-clip NCHLT test / ANV dev_test, seed 42):
+
+| Model | NCHLT WER | NCHLT CER | ANV WER | ANV CER |
+|---|---|---|---|---|
+| Whisper Large v3 zero-shot | 1.108 | 0.763 | 1.072 | 0.501 |
+| **Whisper pilot v1, single-stage (5k NCHLT, full fine-tune, 3 ep)** | **0.265** | **0.060** | - | - |
+| Whisper two-stage + LoRA (5k combined -> 5k NCHLT, 3+3 ep) | 0.321 | 0.080 | 0.797 | 0.215 |
+
+### Honest interpretation: two-stage + LoRA did not beat single-stage here
+
+The two-stage LoRA run (0.321/0.080) is *worse* than the single-stage full
+fine-tune baseline (0.265/0.060) on NCHLT - the opposite of what
+(Teryan et al., 2026) found for Armenian. This is a real result, not
+something to paper over, but it comes with an important confound: this
+comparison changes **two variables at once**, not one - "two-stage vs.
+single-stage" *and* "LoRA (0.36% of params trainable) vs. full fine-tune
+(100% of params trainable)". A LoRA adapter this small has a real capacity
+ceiling regardless of training strategy; the single-stage baseline had the
+whole model to work with. This experiment cannot cleanly separate "LoRA
+underperforms full fine-tuning" from "two-stage training doesn't help
+here" - a cleaner test would run single-stage *with LoRA too* (same
+capacity, only the staging differs), which hasn't been done yet.
+
+**A genuinely positive signal did show up, though**: Stage 2 trained
+*only* on NCHLT for 3 more epochs, yet ANV performance stayed at 0.797 -
+far better than zero-shot (1.072) and nowhere near the total collapse you'd
+expect if Stage 2 had overwritten everything Stage 1 learned about ANV.
+That's real (if partial) evidence for LoRA's catastrophic-forgetting
+resistance claim, even though the absolute ANV number is well behind the
+full-scale Whisper model (0.256) - not a fair comparison, since that model
+saw the full 60k-clip pool, not a 5k-clip LoRA pilot.
+
+**A qualitative pattern worth noting**: the two-stage LoRA model merges
+word boundaries more often than the full-fine-tune models do (e.g.
+"i fanela u dzhiela nzhele" -> "i fanela u dzhielandzhele", a two-word
+merge) - a CTC-style failure mode that's unusual to see from Whisper's
+normally clean tokenizer output, plausibly the rank-8 adapter's limited
+capacity struggling with word-boundary precision specifically. Worth
+checking whether a higher LoRA rank (16/32) fixes this if revisited.
+
+Exact-match rate: NCHLT 49/200 (24.5%) - lower than either the full-scale
+Whisper (65.5%) or the augmented Wav2Vec2 pilot (31.5%), consistent with
+this being the smallest-capacity, smallest-data model of the three.
+
+### Real examples (not cherry-picked)
+
+`results/preds_twostage/final_nchlt_test.csv` / `final_anv_dev_test.csv`,
+first rows of 200 per corpus:
+
+**NCHLT test (WER 0.321):**
+
+| # | Reference | Hypothesis | Row WER |
+|---|---|---|---|
+| 1 | i fanela u dzhiela nzhele | i fanela u dzhielandzhele | 0.40 |
+| 2 | na vhuḓifhinduleli kha vhashumi nahone | na vhuḓifenduleli kha vhashumi nahone | 0.20 |
+| 3 | na u vhambedzea na dza | na vhambedzea na dza | 0.20 |
+| 4 | ya u sumbedzwa tshirunzi na | ya u sumbedzwa tshirunzi na *(exact)* | 0.00 |
+| 5 | vhulimi zwine zwa khou bvelela | vhulimi zwine zwa khou bvelela *(exact)* | 0.00 |
+| 6 | havhudi vhune ha sa tou | ha vhudi vhune ha sa tou | 0.40 |
+| 7 | tsha kale musi vhasidzana vha | tshakale musi vhasidzana vha | 0.40 |
+| 8 | humiselwa kha muiti wa khumbelo | humisela kha muiti wa khumbelo | 0.20 |
+| 9 | oweleaho wa matombo a linton | owelaho wa matombo a ḽi ṱoni | 0.60 |
+| 10 | zwa wela fhasi hadzo kha | zwawela fhasihadzo kha | **0.80** |
+| 11 | wa tshelede ya u unḓa | wa tshelede ya u | 0.20 |
+| 12 | na mugudisi wa u bambela | na mugudisi wa u bambela *(exact)* | 0.00 |
+| 13 | lwone holu lwanga lu a | lone hu lulwa nga luwa | **1.00** |
+| 14 | kona u ṅwala na u | kona u ṅwala na u *(exact)* | 0.00 |
+| 15 | tambudzwa ndi nga u sedzulusa | tambudzwa ndi nga u sedzulusa *(exact)* | 0.00 |
+| 16 | na vhuhole kana u thogomelwa | na vhuhole kana vhugomelwaho | 0.40 |
+| 17 | u rekhoda kha redzhisitara ya | uri khoda kha redzhi sitara ya | **0.80** |
+| 18 | nekedza tshumelo kha vhaaluwa ho | nekedza tshumelo kha vhaaluwa ho *(exact)* | 0.00 |
+| 19 | a nga dzhia tsheo ya | a nga dzhia tsheo ya *(exact)* | 0.00 |
+| 20 | lushaka hune ha vhonala na | hulushaka hune ha vhonala na | 0.20 |
+
+**ANV dev_test (WER 0.797)** - excerpts, full text in the CSV:
+
+| # | Reference (excerpt) | Hypothesis (excerpt) | Row WER |
+|---|---|---|---|
+| 1 | khombo ndi musi vhukonani ho no kalula ni wane khonani yaṋu... | khombo ndi musivhukonani honokalula niwane khonani ya nwiṅwe... | 0.67 |
+| 2 | ahuna khaelo na nthihi ine ya ṋetshedza tsireledzo yo fhelelaho... | ahuna khaelo na tshiine ya nethedzwa sireledzo yo fhelelaho... | 0.46 |
+| 3 | ee nṋe ndi soko vhona unga vhaswa vha hune nda dzula hone... | nedesukuvhuṅavhaswa hune ndadzwaoni vhafunasweambarozwamisala... | **0.86** |
+| 8 | kha vhupo ha hashu mbudzi dzi shumiswa kha tshisevho vhaṅwe... | kavhupoha shungudzidzishumiswa kha tshisevhaṅwe vhashumisana... | **0.91** |
+| 10 | ee vhuponi hashu dzi hone dzi kiḽiniki dza dzimobaiḽi dzine... | evhuponiashu dzihone dzikiliniki zwozimobaili dzenezadza... | **0.95** |
+| 11 | i si gathi yo fhiraho vharengi vha afrika | isigathi yo vhiraho vharengi vha afrika | 0.50 |
+
+ANV rows are consistently worse than NCHLT (as with every other model in
+this file) and several run words together across most of the sentence
+(row 3, 8, 10) rather than just at isolated boundaries - the word-boundary
+weakness noted above compounds on longer, harder, out-of-specialization
+speech. Only 1/200 ANV rows is an exact match.
+
+### Caveats
+
+- Pilot scale only (5k clips per stage) - not full-scale, so absolute
+  numbers aren't the final word on whether two-stage/LoRA works for this
+  project, just a first real signal.
+- The single-stage-vs-two-stage comparison is confounded with
+  LoRA-vs-full-fine-tune, as explained above - a same-capacity comparison
+  (single-stage with LoRA) would be needed to isolate the staging effect
+  cleanly.
+- Only one LoRA rank (8) was tried. Per Seani's model-selection guidance -
+  this is a candidate that showed a real, partial positive signal (the ANV
+  retention result) but didn't clearly beat the existing best, so it's
+  documented honestly rather than presented as a win; a higher-rank rerun
+  would be the natural next experiment if this gets revisited, not treated
+  as a dead end.
+
 ## Whisper pilot v2 (rescoped) - best pilot-scale result
 
 `src/asr/pilot_finetune_whisper_mps_ven.py --resume-from results/whisper-ven-pilot/final

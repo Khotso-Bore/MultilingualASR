@@ -19,6 +19,9 @@ transformers>=4.40.0
 jiwer>=3.0.0
 accelerate>=1.1.0
 
+# LoRA / two-stage fine-tuning (Objective 3, pilot_finetune_whisper_mps_ven.py --lora)
+peft>=0.21.0
+
 # Misinformation classifier (grouped k-fold cross-validation)
 scikit-learn>=1.4.0
 
@@ -26,5 +29,5 @@ scikit-learn>=1.4.0
 jupyter>=1.0.0
 ipykernel>=6.29.0
 
-# Add remaining ASR (peft, accelerate) and classification (evaluate)
-# dependencies here as those pipeline stages land.
+# Add remaining classification (evaluate) dependencies here as that
+# pipeline stage lands.
