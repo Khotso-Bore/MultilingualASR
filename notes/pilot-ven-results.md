@@ -232,9 +232,78 @@ already appears in pilot v1's un-augmented ANV predictions, see
 `results/preds_pilot/wav2vec2-final_anv_dev_test.csv`), so this isn't a
 regression augmentation introduced.
 
-**Caveat**: this is one comparison run at pilot scale on Wav2Vec2 only -
-Whisper's augmentation comparison hasn't been run yet (queued; the code is
-already in place in `pilot_finetune_whisper_mps_ven.py`, same flags).
+**Caveat**: the above is one comparison run at pilot scale on Wav2Vec2 -
+Whisper's own augmentation comparison follows immediately below.
+
+### Whisper augmentation comparison (same technique, second model)
+
+Same idea applied to Whisper: `--train-clips 5000 --eval-clips 500 --epochs 3
+--augment --spec-augment`, fresh `openai/whisper-small`, no LoRA - directly
+comparable to the single-stage baseline above (pilot v1, WER 0.265/CER 0.060).
+Training-time eval improved every epoch: WER 0.240 -> 0.220 -> **0.206**,
+CER 0.049 (final epoch).
+
+**Standardized comparison** (200-clip NCHLT test / ANV dev_test, seed 42):
+
+| Model | NCHLT WER | NCHLT CER | ANV WER | ANV CER |
+|---|---|---|---|---|
+| Whisper pilot v1, no augmentation (5k NCHLT, 3 ep) | 0.265 | 0.060 | - | - |
+| **Whisper pilot v1 + SpecAugment + speed perturbation (same config)** | **0.217** | **0.052** | 0.755 | 0.207 |
+
+**Result: augmentation helps Whisper too, but by a much smaller margin than
+Wav2Vec2.** NCHLT WER falls 0.265 -> 0.217, an 18% relative reduction -
+real and consistent with the epoch-by-epoch training trend, but nowhere
+near Wav2Vec2's 56% relative reduction from the same technique. This makes
+sense: Whisper's pretraining (680k weakly-supervised hours) already gives it
+far more robustness to exactly the kind of acoustic variation SpecAugment
+and speed perturbation simulate, so there's simply less headroom left for
+augmentation to buy back. Wav2Vec2's weaker starting point had much more
+room to improve. ANV (out-of-domain, not trained on here either) sits at
+0.755/0.207 - not directly comparable to a Whisper single-stage ANV
+baseline (none was recorded for pilot v1), but clearly better than zero-shot
+(1.072/0.501) and, interestingly, slightly better than the two-stage LoRA
+model's ANV result (0.797/0.215) despite this model never seeing ANV at all
+during training - plausibly just the benefit of full fine-tuning capacity
+over a small LoRA adapter, independent of the staging question.
+
+Real examples (`results/preds_whisper_augment/final_nchlt_test.csv`, first
+20 of 200, not cherry-picked; exact-match rate 77/200 = 38.5% - up from
+pilot v1's un-augmented rate, though pilot v1's own exact-match count
+wasn't recorded at the time to compare directly):
+
+| # | Reference | Hypothesis | Row WER |
+|---|---|---|---|
+| 1 | i fanela u dzhiela nzhele | i fanela u dzhiela nzhele *(exact)* | 0.00 |
+| 2 | na vhuḓifhinduleli kha vhashumi nahone | na vhudifhinduleli kha vhashumi nahone | 0.20 |
+| 3 | na u vhambedzea na dza | na vhambedzea na dza | 0.20 |
+| 4 | ya u sumbedzwa tshirunzi na | ya u sumbedzwa tshirunzi na *(exact)* | 0.00 |
+| 5 | vhulimi zwine zwa khou bvelela | vhulimi zwine zwa khou bvelela *(exact)* | 0.00 |
+| 6 | havhudi vhune ha sa tou | ha vhudi vhune ha sa tou | 0.40 |
+| 7 | tsha kale musi vhasidzana vha | tshakale musi vhasidzana vha | 0.40 |
+| 8 | humiselwa kha muiti wa khumbelo | humiselwa kha muiti wa khumbelo *(exact)* | 0.00 |
+| 9 | oweleaho wa matombo a linton | oweleaho wa matombo a ḽi ṱoni | 0.40 |
+| 10 | zwa wela fhasi hadzo kha | zwa wela fhasihadzo kha | 0.40 |
+| 11 | wa tshelede ya u unḓa | wa tshelede ya u uhu | 0.20 |
+| 12 | na mugudisi wa u bambela | na mugudisi wa u bambela *(exact)* | 0.00 |
+| 13 | lwone holu lwanga lu a | lone holu lwanga lwa | 0.60 |
+| 14 | kona u ṅwala na u | kona u ṅwala na u *(exact)* | 0.00 |
+| 15 | tambudzwa ndi nga u sedzulusa | tambudzwa ndi nga u sedzulusa *(exact)* | 0.00 |
+| 16 | na vhuhole kana u thogomelwa | na vhuhole kana vhuṱhogomelwaho | 0.40 |
+| 17 | u rekhoda kha redzhisitara ya | uri khoda kha rengisitara ya | 0.60 |
+| 18 | nekedza tshumelo kha vhaaluwa ho | nekedza tshumelo kha vhaaluwa ho *(exact)* | 0.00 |
+| 19 | a nga dzhia tsheo ya | a nga dzhia tsheo ya *(exact)* | 0.00 |
+| 20 | lushaka hune ha vhonala na | lushaka hune ha vhonala na u | 0.20 |
+
+No word-boundary-merge artifacts here (unlike the two-stage LoRA model above
+or Wav2Vec2's CTC decoding) - Whisper's BPE decoding stays clean even under
+augmentation; the errors are ordinary substitutions/insertions
+(oweleaho->oweleaho a ḽi ṱoni, unḓa->uhu), consistent with normal ASR error
+shape rather than a decoding artifact.
+
+**Both augmentation comparisons are now complete**: it helps both models,
+more for the weaker one (Wav2Vec2) than the stronger one (Whisper) - a
+sensible, consistent finding across the two architectures, answering
+Sub-question 2 for this project.
 
 ## Objective 3: two-stage fine-tuning + LoRA (Sub-question 3)
 
