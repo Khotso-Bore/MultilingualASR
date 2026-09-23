@@ -865,15 +865,9 @@ Errors cluster around word-boundary shifts and single-vowel/diacritic swaps
 (vhuḓifhinduleli -> vhuḓifhenduleli, havhudi -> havhuḓivhune), not garbled or
 unrelated output - consistent with the S:D:I error model measured above.
 
-**Whisper's equivalent table is still pending** - the full-scale run
-(`notes/whisper-full-scale-run-log.md`) has no saved predictions yet, and
-generating them now would mean loading a second model into memory alongside
-training while the machine is already swap-constrained (see that file's
-21:15 entry - 23.9GB/24.6GB swap in use). Will add once the run finishes and
-`evaluate_wav2vec2_ven.py`-style predictions are saved for Whisper (or via
-`zero_shot_baseline_ven.py --model results/whisper-ven-pilot-v3/final
---save-predictions`, since that script's `pipeline()` call accepts a local
-checkpoint path).
+**Whisper's equivalent table has since been added** - see the "Whisper
+full-scale (final)" section at the top of this file, generated once the
+full-scale run finished and memory pressure eased.
 
 Pilot: Wav2Vec2 XLS-R-300M, 5,000 NCHLT train clips (<= 10 s), 3 epochs, on an
 M4 MacBook (MPS). NOT the real Stage 1 (60k clips, 10 epochs, GPU) - a proof
