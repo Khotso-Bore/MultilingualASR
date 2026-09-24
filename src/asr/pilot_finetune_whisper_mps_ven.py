@@ -69,18 +69,29 @@ def main(args):
     if args.augment:
         # speed perturbation (proposal Objective 2, §4.3): add 0.9x/1.1x copies
         # of every training clip - eval set is left untouched.
+        # Uses from_generator (streamed to Arrow-backed disk storage) rather
+        # than materializing every decoded array in a Python list at once -
+        # at large clip counts (e.g. 20k raw -> 60k augmented) that list held
+        # enough decoded float32 audio in memory to trigger an OOM kill with
+        # no error output (the process just vanished before any training
+        # log line printed) - caught by a run silently dying, confirmed via
+        # a controlled isolation test before concluding it was memory, not
+        # the nohup/caffeinate wrapper.
         paths = ds["train"].cast_column("audio", Audio(decode=False))["audio"]
         transcripts = ds["train"]["transcript"]
-        expanded = []
-        for p, t in zip(paths, transcripts):
-            array, sr = sf.read(p["path"])
-            assert sr == 16000, f"expected 16kHz audio, got {sr}Hz for {p['path']}"
-            array = array.astype(np.float32)
-            expanded.append({"array": array, "transcript": t})
-            for rate in SPEED_RATES:
-                expanded.append({"array": speed_perturb(array, rate), "transcript": t})
-        ds["train"] = Dataset.from_list(expanded)
-        print(f"augmentation: {len(paths)} clips -> {len(expanded)} "
+        n_raw = len(paths)
+
+        def augmented_generator():
+            for p, t in zip(paths, transcripts):
+                array, sr = sf.read(p["path"])
+                assert sr == 16000, f"expected 16kHz audio, got {sr}Hz for {p['path']}"
+                array = array.astype(np.float32)
+                yield {"array": array, "transcript": t}
+                for rate in SPEED_RATES:
+                    yield {"array": speed_perturb(array, rate), "transcript": t}
+
+        ds["train"] = Dataset.from_generator(augmented_generator)
+        print(f"augmentation: {n_raw} clips -> {len(ds['train'])} "
               f"(speed {SPEED_RATES} added)")
 
     processor = WhisperProcessor.from_pretrained(
