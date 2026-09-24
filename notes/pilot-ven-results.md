@@ -732,6 +732,18 @@ inspection of decoded predictions at every stage, not just inferred from a
 frozen WER number. Full evidence trail: `results/logs/README.md` and the six
 `results/logs/hubert_attempt*.log` files.
 
+**A note on examples for this one**: AfriHuBERT's own checkpoint was later
+overwritten (the `results/hubert-ven-pilot/` directory got reused for the
+SSA-HuBERT attempt further down), so its exact reference/hypothesis pairs
+aren't recoverable from disk any more, and the six attempt logs themselves
+only recorded the aggregate WER/CER per epoch, not per-clip predictions
+(that inline-example logging was only added to the evaluation tooling
+later). The failure mode is not in doubt, though - attempt 5's collapse to
+the single character "a" is the exact same signature independently
+reproduced by SSA-HuBERT months later (see below, real examples included
+there), which is as close to "what this looked like" as the evidence
+allows for AfriHuBERT specifically.
+
 **Decision (given the timeline): proceed with 2 model families - Wav2Vec2
 and Whisper.** AfriHuBERT stands as a documented, fully-evidenced failed
 attempt at a third family rather than an open thread to keep pulling on.
@@ -794,6 +806,25 @@ saved checkpoint and ran raw predictions on 5 training clips - **100% of
 frames predict the pad/blank token on every single example**, decoding to
 an empty string every time, identical failure mode to AfriHuBERT's first
 four attempts.
+
+**What that actually looks like** (real clips, re-checked on the final
+saved checkpoint, `results/mms-ven-pilot/final`):
+
+| Reference | Hypothesis |
+|---|---|
+| i fanela u dzhiela nzhele | *(empty)* |
+| na vhuḓifhinduleli kha vhashumi nahone | *(empty)* |
+| na u vhambedzea na dza | *(empty)* |
+| ya u sumbedzwa tshirunzi na | *(empty)* |
+| vhulimi zwine zwa khou bvelela | *(empty)* |
+
+Not "wrong words" or "garbled output" the way an under-trained-but-learning
+model looks (compare the real working models' examples above, which are
+always at least partially readable) - the model outputs literally nothing,
+for every clip, short or long, NCHLT or ANV. That is what "predicts blank
+on 100% of frames" means in practice: CTC's blank token means "no
+character here," so a sequence of nothing-but-blanks decodes to nothing at
+all, regardless of what the audio actually contains.
 
 This is a genuinely interesting result on its own terms: MMS-300m and
 XLS-R-300M are the same `Wav2Vec2ForCTC` architecture and the same
@@ -868,6 +899,25 @@ just `'n'`. Same "collapse to whichever single class is easiest" pattern as
 AfriHuBERT's attempt 5 (which collapsed to `'a'` after a blank-bias fix),
 just landing on a different token.
 
+**What that actually looks like** (real clips, re-checked on the final
+saved checkpoint, `results/w2vbert-ven-pilot/final`):
+
+| Reference | Hypothesis |
+|---|---|
+| i fanela u dzhiela nzhele | n |
+| na vhuḓifhinduleli kha vhashumi nahone | n |
+| na u vhambedzea na dza | n |
+| ya u sumbedzwa tshirunzi na | n |
+| vhulimi zwine zwa khou bvelela | n |
+| khombo ndi musi vhukonani ho no kalula ni wane khonani yaṋu iṅwe hanefho... (222 chars) | n |
+
+The last row is worth sitting with: a 222-character reference sentence, and
+the model's answer is one letter - "n", the single most-decodable-cheaply
+character for the loss function to fall back on, completely detached from
+what was actually said. Same failure shape as MMS's blank collapse (predict
+whatever's easiest regardless of input), just landing on a non-blank token
+instead of nothing.
+
 **Emerging pattern: 3 of 4 non-Whisper CTC fine-tunes have now collapsed**
 (AfriHuBERT, MMS, w2v-BERT) - only Wav2Vec2 XLS-R-300M hasn't. None of MMS
 or w2v-BERT got any mitigation attempt (lower LR, blank-bias disfavor) -
@@ -908,6 +958,23 @@ bit-for-bit identical between epoch 1 and epoch 2 - and identical to
 AfriHuBERT's own original blank-collapse signature. Confirmed by direct
 inspection: 100% of frames predict blank on every one of 5 checked training
 clips, decoding to an empty string every time.
+
+**What that actually looks like** (real clips, re-checked on the final
+saved checkpoint, `results/data2vec-ven-pilot/final`):
+
+| Reference | Hypothesis |
+|---|---|
+| i fanela u dzhiela nzhele | *(empty)* |
+| na vhuḓifhinduleli kha vhashumi nahone | *(empty)* |
+| na u vhambedzea na dza | *(empty)* |
+| ya u sumbedzwa tshirunzi na | *(empty)* |
+| vhulimi zwine zwa khou bvelela | *(empty)* |
+
+Bit-for-bit the same empty-output pattern as MMS, despite a completely
+different pretraining objective (continuous regression vs. MMS's
+contrastive-quantized) and completely different pretraining data (English-only
+Librispeech vs. MMS's 1,400+-language pool) - strong evidence this failure
+mode isn't tied to any one checkpoint's specific training recipe.
 
 **This disproves the discretization hypothesis.** data2vec-audio has no
 discretized pretraining target at all, and it collapsed exactly like the
