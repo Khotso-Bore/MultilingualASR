@@ -1008,6 +1008,41 @@ collapse signature here is already unambiguous and identical to 4 other
 confirmed collapses, not worth re-litigating). `results/xlsr53-pilot/final`
 kept on disk as evidence; not carried forward to full scale.
 
+## Ninth model attempt: SSA-HuBERT (2026-09-24) - collapsed
+
+Found via a literature search for other candidate architectures:
+`Orange/SSA-HuBERT-base-5k` - a genuinely different pretrained checkpoint
+from AfriHuBERT, not a variant of it (Orange's own Africa-centric HuBERT
+pretraining, ~5,000 hours across 21 Sub-Saharan languages - none closely
+related to Tshivenda, but self-supervised representations often transfer
+across unrelated languages reasonably well, so worth testing rather than
+assuming). Reused `pilot_finetune_hubert_mps_ven.py` (added a `--model`
+override so it isn't hardcoded to AfriHuBERT any more), with
+`--disfavor-blank-init` enabled from the very first run this time, since
+that fix was already known to be necessary from the AfriHuBERT
+investigation - no reason to waste a full run rediscovering it.
+
+**Result: collapses too, into the same fallback failure mode AfriHuBERT
+found *after* its blank-bias fix.** WER/CER frozen exactly at
+0.9705/0.9612 across all 3 epochs (loss also flat: 4.894 -> 4.912 -> 4.896).
+Verified against real predictions, not just the number: the model outputs
+the single character **"a" for every input**, regardless of content length
+or reference text - the same "collapses past blank into the single most
+frequent character" pattern already documented for AfriHuBERT, just
+reached immediately instead of needing a follow-up fix to get there.
+
+**Updated tally: 9 checkpoints tried, 2 work (XLS-R-300M, UniSpeech), 6
+collapse** (AfriHuBERT, MMS, w2v-BERT, data2vec-audio, XLSR-53,
+SSA-HuBERT). The blank-bias fix that helped AfriHuBERT initially clearly
+doesn't generalize as a fix for this whole failure family - it just
+relocates where the collapse lands, not whether one happens. Per Seani's
+model-selection guidance: documented and dropped, not pursued further -
+6 real, independently-collapsing attempts is strong enough evidence that
+whatever's driving this (something about CTC fine-tuning stability on this
+tokenizer/data/hardware combination, not any one checkpoint) isn't going to
+be solved by trying yet another self-supervised checkpoint with the same
+architecture shape.
+
 ## External model check: DSFSI's own multilingual Whisper (2026-08-25)
 
 Per instruction to check for any model with confirmed Tshivenda support:
