@@ -117,7 +117,7 @@ def main(args):
         print(f"resumed weights from {args.resume_from}")
     else:
         model = HubertForCTC.from_pretrained(
-            BASE_CHECKPOINT,
+            args.model,
             ctc_loss_reduction="mean", ctc_zero_infinity=True,
             pad_token_id=processor.tokenizer.pad_token_id,
             vocab_size=len(processor.tokenizer),
@@ -140,7 +140,10 @@ def main(args):
 
     model = model.to(device)
 
-    out_dir = OUTPUT_DIR if not args.resume_from else OUTPUT_DIR.parent / (OUTPUT_DIR.name + "-v2")
+    if args.out_name:
+        out_dir = OUTPUT_DIR.parent / args.out_name
+    else:
+        out_dir = OUTPUT_DIR if not args.resume_from else OUTPUT_DIR.parent / (OUTPUT_DIR.name + "-v2")
 
     training_args = TrainingArguments(
         output_dir=str(out_dir),
@@ -192,6 +195,10 @@ def main(args):
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument("--model", default=BASE_CHECKPOINT,
+                        help="HF checkpoint id, e.g. Orange/SSA-HuBERT-base-5k")
+    parser.add_argument("--out-name", default=None,
+                        help="override the output dir name under results/ (default: derived from --resume-from)")
     parser.add_argument("--train-clips", type=int, default=5000)
     parser.add_argument("--eval-clips", type=int, default=500)
     parser.add_argument("--epochs", type=int, default=3)
