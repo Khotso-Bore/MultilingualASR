@@ -528,14 +528,52 @@ fixed LR). Stage 2 training-time eval (NCHLT-only validation): 0.450 ->
 | Whisper, single-stage, **same-capacity LoRA** (5k NCHLT, 3 ep) | 0.384 | 0.095 | 0.854 | 0.258 |
 | Whisper, **two-stage + LoRA** (5k combined -> 5k NCHLT, 3+3 ep) | 0.321 | 0.080 | 0.797 | 0.215 |
 
-### Tightened comparison: two-stage does beat single-stage, at matched capacity
+### Run 1 interpretation (as it stood before the follow-up control below): two-stage + LoRA did not beat single-stage here
 
-The original comparison above (two-stage LoRA 0.321 vs. single-stage full
-fine-tune 0.265) mixed two variables - staging *and* parameter budget -
-and looked like a loss for two-stage. Ran the missing control to isolate
-it: single-stage training with the *exact same* LoRA config (rank 8,
-alpha 16, lr 3e-4) on the same 5k NCHLT clips, 3 epochs - no Stage 1 at
-all, otherwise identical to the two-stage run's Stage 2.
+The two-stage LoRA run (0.321/0.080) is *worse* than the single-stage full
+fine-tune baseline (0.265/0.060) on NCHLT - the opposite of what
+(Teryan et al., 2026) found for Armenian. This is a real result, not
+something to paper over, but it comes with an important confound: this
+comparison changes **two variables at once**, not one - "two-stage vs.
+single-stage" *and* "LoRA (0.36% of params trainable) vs. full fine-tune
+(100% of params trainable)". A LoRA adapter this small has a real capacity
+ceiling regardless of training strategy; the single-stage baseline had the
+whole model to work with. This experiment cannot cleanly separate "LoRA
+underperforms full fine-tuning" from "two-stage training doesn't help
+here" - a cleaner test would run single-stage *with LoRA too* (same
+capacity, only the staging differs), which hadn't been done yet at this
+point (see Run 2 below, which does exactly this and updates the picture -
+kept here rather than deleted, since this was the honest read of the
+evidence available at the time and the reasoning that motivated Run 2).
+
+**A genuinely positive signal did show up, though**: Stage 2 trained
+*only* on NCHLT for 3 more epochs, yet ANV performance stayed at 0.797 -
+far better than zero-shot (1.072) and nowhere near the total collapse you'd
+expect if Stage 2 had overwritten everything Stage 1 learned about ANV.
+That's real (if partial) evidence for LoRA's catastrophic-forgetting
+resistance claim, even though the absolute ANV number is well behind the
+full-scale Whisper model (0.256) - not a fair comparison, since that model
+saw the full 60k-clip pool, not a 5k-clip LoRA pilot.
+
+**A qualitative pattern worth noting**: the two-stage LoRA model merges
+word boundaries more often than the full-fine-tune models do (e.g.
+"i fanela u dzhiela nzhele" -> "i fanela u dzhielandzhele", a two-word
+merge) - a CTC-style failure mode that's unusual to see from Whisper's
+normally clean tokenizer output, plausibly the rank-8 adapter's limited
+capacity struggling with word-boundary precision specifically. Worth
+checking whether a higher LoRA rank (16/32) fixes this if revisited.
+
+Exact-match rate: NCHLT 49/200 (24.5%) - lower than either the full-scale
+Whisper (65.5%) or the augmented Wav2Vec2 pilot (31.5%), consistent with
+this being the smallest-capacity, smallest-data model of the three.
+
+### Run 2 (follow-up, same session): the same-capacity control, and what it changes
+
+Ran the missing control Run 1 identified: single-stage training with the
+*exact same* LoRA config (rank 8, alpha 16, lr 3e-4) on the same 5k NCHLT
+clips, 3 epochs - no Stage 1 at all, otherwise identical to the two-stage
+run's Stage 2. This isolates staging from parameter budget, which Run 1
+could not do on its own.
 
 **Result: single-stage LoRA is the worst of the three (0.384/0.095) -
 clearly worse than two-stage LoRA (0.321/0.080).** Once capacity is held
@@ -543,69 +581,41 @@ constant, staging helps: 0.384 -> 0.321 is a 16% relative WER reduction
 from adding Stage 1's combined-domain exposure before specializing, and
 ANV also improves with staging (0.854 -> 0.797) even though Stage 2 never
 touches ANV data either way. **This now agrees with (Teryan et al., 2026)'s
-finding for Armenian** - the earlier "two-stage loses" read was really
-"a 0.36%-of-parameters adapter loses to a fully-updated model," a
-different and expected result, not a finding about staging at all.
+finding for Armenian** - Run 1's "two-stage loses" read was really "a
+0.36%-of-parameters adapter loses to a fully-updated model," a different
+and expected result, not a finding about staging at all. Run 1's reasoning
+wasn't wrong given what it had to work with - it correctly identified its
+own confound and named the exact control needed; Run 2 just supplies that
+control.
 
-So the honest, now-complete picture for Sub-question 3: **two-stage
-training is a real, measurable win within a fixed parameter budget (LoRA)**,
-but LoRA itself - at rank 8 - doesn't yet close the gap to full-parameter
-fine-tuning regardless of staging (both LoRA variants trail the
-full-fine-tune baseline). Both things are true at once and don't
-contradict each other.
+**So the complete picture across both runs, for Sub-question 3**:
+**two-stage training is a real, measurable win within a fixed parameter
+budget (LoRA)** - that's the corrected headline - but LoRA itself, at rank
+8, doesn't yet close the gap to full-parameter fine-tuning regardless of
+staging (both LoRA variants still trail the Run 1 full-fine-tune baseline).
+Both things are true at once and don't contradict each other.
 
-**The catastrophic-forgetting evidence is now cleaner too**: single-stage
-LoRA (never exposed to ANV) scores 0.854 on ANV; two-stage LoRA (exposed
-to ANV only in Stage 1, then 3 more NCHLT-only epochs) still scores 0.797 -
-better despite Stage 2 having every opportunity to overwrite that ANV
-knowledge and not doing so. That's a genuine, matched-capacity
-demonstration of the forgetting-resistance claim, not just a comparison
-against a differently-sized model.
+**The catastrophic-forgetting evidence from Run 1 is confirmed and
+sharpened by Run 2**: single-stage LoRA (never exposed to ANV) scores
+0.854 on ANV; two-stage LoRA (exposed to ANV only in Stage 1, then 3 more
+NCHLT-only epochs) still scores 0.797 - better despite Stage 2 having
+every opportunity to overwrite that ANV knowledge and not doing so. That's
+now a genuine, matched-capacity demonstration of the forgetting-resistance
+claim Run 1 could only gesture at, not just a comparison against a
+differently-sized model.
 
-**Qualitative pattern, now visible across all three variants**: the
-word-boundary-merge failure mode ("i fanela u dzhiela nzhele" ->
+**Run 1's qualitative word-boundary-merge observation is also refined by
+Run 2**: the merge pattern ("i fanela u dzhiela nzhele" ->
 "...dzhielandzhele") shows up in *both* LoRA variants (two-stage and
-single-stage) but not in the full-fine-tune baseline - so it's specifically
-a rank-8-LoRA-capacity artifact, not a two-stage artifact as first
-suspected. Worth checking whether a higher rank (16/32) fixes it.
+single-stage) but not in the full-fine-tune baseline - so Run 2 shows it's
+specifically a rank-8-LoRA-capacity artifact, not a two-stage artifact as
+Run 1's phrasing had tentatively suggested.
 
-Exact-match rate: single-stage LoRA 30/200 (15%) - the lowest of any
-variant tried, confirming it's the weakest of the three by every measure,
-not just the aggregate WER.
+Exact-match rate: single-stage LoRA (Run 2) 30/200 (15%) - lower than
+two-stage LoRA's 49/200 (24.5%) from Run 1, confirming it's the weakest of
+the three variants by every measure, not just the aggregate WER.
 
 ### Real examples (not cherry-picked)
-
-**Single-stage LoRA, same capacity, NCHLT test (WER 0.384)** - the control
-run, from `results/preds_singlestage_lora/final_nchlt_test.csv`:
-
-| # | Reference | Hypothesis | Row WER |
-|---|---|---|---|
-| 1 | i fanela u dzhiela nzhele | i fanela u dzielandzhele | 0.40 |
-| 2 | na vhuḓifhinduleli kha vhashumi nahone | na vhudifenduleli kha vhashunwe nahone | 0.40 |
-| 3 | na u vhambedzea na dza | na vhambedzea na dza | 0.20 |
-| 4 | ya u sumbedzwa tshirunzi na | ya u sumbedzwa tshirunzi na *(exact)* | 0.00 |
-| 5 | vhulimi zwine zwa khou bvelela | vulime zwine zwa khou bvelela | 0.20 |
-| 6 | havhudi vhune ha sa tou | ha vhudi vhune ha sa tou | 0.40 |
-| 7 | tsha kale musi vhasidzana vha | tshakale musi vhasidzana vha | 0.40 |
-| 8 | humiselwa kha muiti wa khumbelo | ho misalwa kha muiti wa khumbelo | 0.40 |
-| 9 | oweleaho wa matombo a linton | o wela ho wa matomvoa ḽintoni | **1.20** |
-| 10 | zwa wela fhasi hadzo kha | zwawela fhasihadzo kha | 0.80 |
-| 11 | wa tshelede ya u unḓa | wa tshelede ya u | 0.20 |
-| 12 | na mugudisi wa u bambela | na mugudisiwa u bambela | 0.40 |
-| 13 | lwone holu lwanga lu a | lone hululwa nga luwa | **1.00** |
-| 14 | kona u ṅwala na u | kona u nwala na u | 0.20 |
-| 15 | tambudzwa ndi nga u sedzulusa | tambudzwa ndi nga u sedzulusa *(exact)* | 0.00 |
-| 16 | na vhuhole kana u thogomelwa | na vhuhole kana vhogomelwaho | 0.40 |
-| 17 | u rekhoda kha redzhisitara ya | uri khoda kha redzhi sitara ya | 0.80 |
-| 18 | nekedza tshumelo kha vhaaluwa ho | neketza tshumelo kha vhaaluwa ho | 0.20 |
-| 19 | a nga dzhia tsheo ya | a nga dzhia tsheo ya *(exact)* | 0.00 |
-| 20 | lushaka hune ha vhonala na | hulusha kha hune avhonala na u | **1.00** |
-
-Compare row-by-row against the two-stage table below on the *same 20
-clips* - row 9 (WER 1.20, garbled beyond just word-merging: "matombo a
-linton" -> "matomvoa ḽintoni") and row 20 (WER 1.00) are both meaningfully
-worse here than their two-stage counterparts, direct visual confirmation
-of the aggregate WER gap, not just a number.
 
 `results/preds_twostage/final_nchlt_test.csv` / `final_anv_dev_test.csv`,
 first rows of 200 per corpus:
@@ -651,6 +661,38 @@ this file) and several run words together across most of the sentence
 (row 3, 8, 10) rather than just at isolated boundaries - the word-boundary
 weakness noted above compounds on longer, harder, out-of-specialization
 speech. Only 1/200 ANV rows is an exact match.
+
+**Single-stage LoRA, same capacity, NCHLT test (WER 0.384)** - the control
+run, from `results/preds_singlestage_lora/final_nchlt_test.csv`:
+
+| # | Reference | Hypothesis | Row WER |
+|---|---|---|---|
+| 1 | i fanela u dzhiela nzhele | i fanela u dzielandzhele | 0.40 |
+| 2 | na vhuḓifhinduleli kha vhashumi nahone | na vhudifenduleli kha vhashunwe nahone | 0.40 |
+| 3 | na u vhambedzea na dza | na vhambedzea na dza | 0.20 |
+| 4 | ya u sumbedzwa tshirunzi na | ya u sumbedzwa tshirunzi na *(exact)* | 0.00 |
+| 5 | vhulimi zwine zwa khou bvelela | vulime zwine zwa khou bvelela | 0.20 |
+| 6 | havhudi vhune ha sa tou | ha vhudi vhune ha sa tou | 0.40 |
+| 7 | tsha kale musi vhasidzana vha | tshakale musi vhasidzana vha | 0.40 |
+| 8 | humiselwa kha muiti wa khumbelo | ho misalwa kha muiti wa khumbelo | 0.40 |
+| 9 | oweleaho wa matombo a linton | o wela ho wa matomvoa ḽintoni | **1.20** |
+| 10 | zwa wela fhasi hadzo kha | zwawela fhasihadzo kha | 0.80 |
+| 11 | wa tshelede ya u unḓa | wa tshelede ya u | 0.20 |
+| 12 | na mugudisi wa u bambela | na mugudisiwa u bambela | 0.40 |
+| 13 | lwone holu lwanga lu a | lone hululwa nga luwa | **1.00** |
+| 14 | kona u ṅwala na u | kona u nwala na u | 0.20 |
+| 15 | tambudzwa ndi nga u sedzulusa | tambudzwa ndi nga u sedzulusa *(exact)* | 0.00 |
+| 16 | na vhuhole kana u thogomelwa | na vhuhole kana vhogomelwaho | 0.40 |
+| 17 | u rekhoda kha redzhisitara ya | uri khoda kha redzhi sitara ya | 0.80 |
+| 18 | nekedza tshumelo kha vhaaluwa ho | neketza tshumelo kha vhaaluwa ho | 0.20 |
+| 19 | a nga dzhia tsheo ya | a nga dzhia tsheo ya *(exact)* | 0.00 |
+| 20 | lushaka hune ha vhonala na | hulusha kha hune avhonala na u | **1.00** |
+
+Compare row-by-row against the two-stage table above on the *same 20
+clips* - row 9 (WER 1.20, garbled beyond just word-merging: "matombo a
+linton" -> "matomvoa ḽintoni") and row 20 (WER 1.00) are both meaningfully
+worse here than their two-stage counterparts, direct visual confirmation
+of the aggregate WER gap, not just a number.
 
 ### Training progression: the same 5 clips at every checkpoint
 
