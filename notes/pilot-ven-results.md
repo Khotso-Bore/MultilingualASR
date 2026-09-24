@@ -18,7 +18,7 @@ same sets throughout):
 | Whisper, pilot + augmentation (5k clips) | 0.217 | 0.052 | 0.755 | 0.207 | "Objective 2" |
 | Whisper, two-stage + LoRA (5k+5k clips) | 0.321 | 0.080 | 0.797 | 0.215 | "Objective 3" |
 | **Whisper, full-scale (60k clips) - the headline result** | **0.103** | **0.032** | **0.256** | **0.108** | "Whisper full-scale" |
-| Wav2Vec2 XLS-R-300M, full-scale (60k clips) | *in progress* | | | | "Whisper full-scale"-equivalent, see the run log |
+| Wav2Vec2 XLS-R-300M, full-scale (60k clips) | 0.252 | 0.056 | 0.457 | 0.106 | "Wav2Vec2 XLS-R-300M full-scale" |
 
 **How to navigate the rest of this file:**
 - **"Whisper full-scale"** (just below) - Objective 1's actual answer for
@@ -199,6 +199,72 @@ From `results/preds_full/*.csv` via `ErrorModel.from_prediction_files`
 - This is the error model now used for the error-propagation study
   (`src/error_propagation/run_degradation_study_ven.py`) via
   `--error-model results/preds_full/final_nchlt_test.csv results/preds_full/final_anv_dev_test.csv`.
+
+## Wav2Vec2 XLS-R-300M full-scale - completes Objective 1's other named model
+
+Objective 1 names *both* Wav2Vec2 XLS-R-300M and Whisper. Wav2Vec2 sat at
+pilot-scale (0.332/0.074) for a while purely due to a compute-budget call,
+not because it underperformed - closing that out here with the same
+methodology as the Whisper full-scale run: `--resume-from
+results/wav2vec2-ven-pilot-v2/final --include-anv --epochs 1
+--learning-rate 5e-5 --train-clips 100000` (clamped to the real 60,089-clip
+combined NCHLT+ANV pool). No errors during training.
+
+**Standardized comparison** (200-clip NCHLT test / ANV dev_test, seed 42):
+
+| Model | NCHLT WER | NCHLT CER | ANV WER | ANV CER |
+|---|---|---|---|---|
+| Wav2Vec2 pilot-scale (7.3k clips) | 0.332 | 0.074 | 0.537 | 0.127 |
+| Wav2Vec2 pilot + augmentation (5k clips, tripled) | 0.269 | 0.060 | - | - |
+| **Wav2Vec2 full-scale (60k clips)** | **0.252** | **0.056** | **0.457** | **0.106** |
+
+Full-scale training beats even the augmented pilot-scale result (0.252 vs.
+0.269) - genuine additional real data still edges out a smaller augmented
+set, which is the expected/sensible relationship (augmentation is a good
+value-per-hour technique when you don't have the real data or the compute
+for it, not a full substitute for it). Relative to pilot-scale: NCHLT WER
+falls 24% (0.332->0.252), ANV falls 15% (0.537->0.457) - a real,
+if more modest, gain than Whisper got from the same 8x data increase
+(Whisper's full-scale jump was more dramatic, 0.182->0.103, roughly
+halving - consistent with Whisper already being the stronger architecture
+with more capacity to actually use the extra data).
+
+Real examples (`results/preds_wav2vec2_full/wav2vec2-final_nchlt_test.csv`,
+first 20 of 200, not cherry-picked; exact-match rate 67/200 = 33.5% NCHLT,
+3/200 = 1.5% ANV):
+
+| # | Reference | Hypothesis | Row WER |
+|---|---|---|---|
+| 1 | i fanela u dzhiela nzhele | i fanela u dzhiela nzhele *(exact)* | 0.00 |
+| 2 | na vhuḓifhinduleli kha vhashumi nahone | na vhuḓifhinduleli kha vhashumi nahone *(exact)* | 0.00 |
+| 3 | na u vhambedzea na dza | na u vhambedzeana dza | 0.40 |
+| 4 | ya u sumbedzwa tshirunzi na | ya u sumbedzwa tshirunzi na *(exact)* | 0.00 |
+| 5 | vhulimi zwine zwa khou bvelela | vhulimi zwine zwa khou bvelela *(exact)* | 0.00 |
+| 6 | havhudi vhune ha sa tou | havhuḓi vhune ha sa tou | 0.20 |
+| 7 | tsha kale musi vhasidzana vha | tshakale musi vhasidzana vha | 0.40 |
+| 8 | humiselwa kha muiti wa khumbelo | humiselwa kha muiti wa khumbelo *(exact)* | 0.00 |
+| 9 | oweleaho wa matombo a linton | o welaho wa matombo a ḽinthoni | 0.60 |
+| 10 | zwa wela fhasi hadzo kha | zwauwela fhasi hadzo kha | 0.40 |
+| 11 | wa tshelede ya u unḓa | wa tshelede ya u unwwa | 0.20 |
+| 12 | na mugudisi wa u bambela | na mugudisi wa u bambela *(exact)* | 0.00 |
+| 13 | lwone holu lwanga lu a | lone ho lulwa nga luwa | **1.00** |
+| 14 | kona u ṅwala na u | kona u ṅwala na u *(exact)* | 0.00 |
+| 15 | tambudzwa ndi nga u sedzulusa | tambudzwa ndi nga u sedzulusa *(exact)* | 0.00 |
+| 16 | na vhuhole kana u thogomelwa | na vhuhole kana vhuṱhogomelwaho | 0.40 |
+| 17 | u rekhoda kha redzhisitara ya | uri khoda kha redzhisitara ya | 0.40 |
+| 18 | nekedza tshumelo kha vhaaluwa ho | nekedza tshumelo kha vhaaluwa ho *(exact)* | 0.00 |
+| 19 | a nga dzhia tsheo ya | a nga dzhia tsheo ya *(exact)* | 0.00 |
+| 20 | lushaka hune ha vhonala na | lushaka hune ha vhonala na u | 0.20 |
+
+Same word-boundary-merge pattern as every other Wav2Vec2 run in this file
+(clip 3, 10, 13) - a consistent CTC decoding characteristic across every
+scale tried, not something more data fixes. Row 13 (WER 1.00) is the same
+kind of single-short-clip total miss seen in the full-scale Whisper table
+above - a reminder these clips are short enough that one bad guess can
+swing WER a lot on an individual row even when the corpus-level number is
+solid.
+
+**Objective 1 is now fully answered for both named models at full scale.**
 
 ## Objective 2: data augmentation (SpecAugment + speed perturbation)
 
