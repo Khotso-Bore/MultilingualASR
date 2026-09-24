@@ -969,6 +969,45 @@ design, specifically built and validated for cross-lingual transfer. Worth
 noting as a shape to the pattern, though not yet enough data points to call
 it a confirmed rule.
 
+## Eighth model attempt: XLSR-53 (2026-09-24) - collapsed
+
+Tried `facebook/wav2vec2-large-xlsr-53` as a candidate suggested by the
+project's own literature review - (Dar and Pushparaj, 2026) found this
+smaller, older, 53-language checkpoint outperformed the larger XLS-R-300M
+for low-resource Kashmiri. Added `--model`/`--out-name` flags to
+`pilot_finetune_wav2vec2_mps_ven.py` to make the base checkpoint
+swappable (previously hardcoded to XLS-R-300M), smoke-tested end-to-end
+before committing real compute.
+
+**A false alarm first**: the initial smoke test logged one training "step"
+taking 15 minutes, which looked like a catastrophic architecture-specific
+slowdown. Diagnosed rather than assumed - a follow-up timing probe with
+`--grad-accum 1` (isolating individual micro-batches instead of an
+8-batch-accumulated step) showed completely normal ~1-1.5s/step timing,
+the same ballpark as XLS-R-300M. The real cause was system memory pressure
+right after the Wav2Vec2 full-scale run had just finished, not XLSR-53
+itself - confirmed before spending hours on a real pilot run based on a
+misleading number.
+
+**Real result: collapses, same as 4 of the other non-Whisper attempts.**
+Pilot run (5,000 NCHLT clips, 3 epochs, matching XLS-R-300M's own original
+validating pilot scale) finished with eval WER/CER **frozen at exactly
+0.9709/0.9614 across all 3 epochs** - no movement at all, loss barely
+ticking down (3.033 -> 2.959 -> 2.951). Verified by inspecting actual
+predictions, not just the frozen number: **every single hypothesis was an
+empty string** (WER 1.000, WIP 0.000 on every clip checked) - the model
+predicts nothing at all, the same total-collapse signature as AfriHuBERT,
+MMS, w2v-BERT, and data2vec-audio.
+
+**Updated tally: out of 8 checkpoints tried, 2 work (XLS-R-300M, UniSpeech)
+and 5 collapse** (AfriHuBERT, MMS, w2v-BERT, data2vec-audio, XLSR-53).
+Per Seani's model-selection guidance, this is now a documented, evidenced
+ruled-out attempt, not an open thread - no further debugging planned
+against XLSR-53 (unlike AfriHuBERT's 6-attempt investigation, since the
+collapse signature here is already unambiguous and identical to 4 other
+confirmed collapses, not worth re-litigating). `results/xlsr53-pilot/final`
+kept on disk as evidence; not carried forward to full scale.
+
 ## External model check: DSFSI's own multilingual Whisper (2026-08-25)
 
 Per instruction to check for any model with confirmed Tshivenda support:
