@@ -80,6 +80,32 @@ a different/weaker setup.
 | deletion only | 0.546 | 0.543 | 0.537 | 0.529 | 0.550 | 0.516 |
 | insertion only | 0.546 | 0.542 | 0.483 | 0.454 | 0.443 | 0.389 |
 
+### Training progression: when the underlying classifier actually learned
+
+Every WER-vs-F1 number above is the *same trained model per fold* -
+trained once on clean text, then evaluated repeatedly at each corruption
+level (see Method). Its clean-text training run is itself worth showing,
+from the real per-epoch metrics in `results/logs/error_propagation_degradation_study_afroxlmr.log`
+(fold 1 shown, representative - the whole degradation curve rests on a
+model that trains exactly like this):
+
+| Epoch | Accuracy | Macro F1 |
+|---|---|---|
+| 1 | 0.500 | 0.333 *(chance)* |
+| 2 | **0.583** | **0.578** *(the jump)* |
+| 3 | 0.528 | 0.429 |
+| 4 | 0.542 | 0.479 |
+| 5 | 0.583 | 0.578 *(early stopping - epoch 2 kept)* |
+
+Same shape as Objective 4's own classifier training (`notes/tshivenda-classifier-proxy.md`)
+- a single-epoch jump to real signal, then noise around that level until
+early stopping. Worth stating plainly: **the entire degradation curve
+above is built on this one epoch-2-quality snapshot** per fold, not a
+fully-converged model - the WER-vs-F1 relationship measures how a
+realistically-trained (not perfectly-trained) classifier degrades, which
+is arguably more representative of a real deployment than an idealized
+fully-optimized one would be.
+
 ## Findings
 
 - **Insertion errors are the most harmful error type**, by a clear margin -
