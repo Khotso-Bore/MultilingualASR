@@ -1,0 +1,63 @@
+model: results/whisper-twostage-merged/final | device: mps | sample per corpus: 200 | seed: 42
+Loading weights:   0%|          | 0/479 [00:00<?, ?it/s]Loading weights: 100%|██████████| 479/479 [00:00<00:00, 8164.87it/s]
+[transformers] A custom logits processor of type <class 'transformers.generation.logits_process.SuppressTokensLogitsProcessor'> has been passed to `.generate()`, but it was also created in `.generate()`, given its parameterization. The custom <class 'transformers.generation.logits_process.SuppressTokensLogitsProcessor'> will take precedence. Please check the docstring of <class 'transformers.generation.logits_process.SuppressTokensLogitsProcessor'> to see related `.generate()` flags.
+[transformers] A custom logits processor of type <class 'transformers.generation.logits_process.SuppressTokensAtBeginLogitsProcessor'> has been passed to `.generate()`, but it was also created in `.generate()`, given its parameterization. The custom <class 'transformers.generation.logits_process.SuppressTokensAtBeginLogitsProcessor'> will take precedence. Please check the docstring of <class 'transformers.generation.logits_process.SuppressTokensAtBeginLogitsProcessor'> to see related `.generate()` flags.
+[transformers] Ignoring clean_up_tokenization_spaces=True for BPE tokenizer WhisperTokenizer. The clean_up_tokenization post-processing step is designed for WordPiece tokenizers and is destructive for BPE (it strips spaces before punctuation). Set clean_up_tokenization_spaces=False to suppress this warning, or set clean_up_tokenization_spaces_for_bpe_even_though_it_will_corrupt_output=True to force cleanup anyway.
+  nchlt_test: 25/200 (1.1 clips/s)
+  nchlt_test: 50/200 (1.1 clips/s)
+  nchlt_test: 75/200 (1.1 clips/s)
+  nchlt_test: 100/200 (1.0 clips/s)
+  nchlt_test: 125/200 (1.0 clips/s)
+  nchlt_test: 150/200 (1.0 clips/s)
+  nchlt_test: 175/200 (0.9 clips/s)
+  nchlt_test: 200/200 (0.8 clips/s)
+  predictions saved -> results/preds_twostage/final_nchlt_test.csv
+
+== nchlt_test ==
+n=200  WER=0.321  CER=0.080  MER=0.312  WIL=0.493  WIP=0.507  empty predictions=0  (238s)
+  ref: i fanela u dzhiela nzhele
+  hyp: i fanela u dzhielandzhele
+
+  ref: na vhuḓifhinduleli kha vhashumi nahone
+  hyp: na vhuḓifenduleli kha vhashumi nahone
+
+  ref: na u vhambedzea na dza
+  hyp: na vhambedzea na dza
+
+  ref: ya u sumbedzwa tshirunzi na
+  hyp: ya u sumbedzwa tshirunzi na
+
+  ref: vhulimi zwine zwa khou bvelela
+  hyp: vhulimi zwine zwa khou bvelela
+
+  anv_dev_test: 25/200 (0.1 clips/s)
+  anv_dev_test: 50/200 (0.2 clips/s)
+  anv_dev_test: 75/200 (0.2 clips/s)
+  anv_dev_test: 100/200 (0.2 clips/s)
+  anv_dev_test: 125/200 (0.2 clips/s)
+  anv_dev_test: 150/200 (0.2 clips/s)
+  anv_dev_test: 175/200 (0.2 clips/s)
+  anv_dev_test: 200/200 (0.2 clips/s)
+  predictions saved -> results/preds_twostage/final_anv_dev_test.csv
+
+== anv_dev_test ==
+n=200  WER=0.797  CER=0.215  MER=0.797  WIL=0.925  WIP=0.075  empty predictions=0  (1141s)
+  ref: khombo ndi musi vhukonani ho no kalula ni wane khonani yaṋu iṅwe hanefho online a tshi vhoni humbela thuso ya masheleni ngauri hu ḓovha hu kale ni tshi davhidzana naye na humbula u sokou muthusa ngeno ni sa muḓivhi
+  hyp: khombo ndi musivhukonani honokalula niwane khonani ya nwiṅwe hanefho online a tshivhoni humbela thuso ya mashelini ngauri hudovha hukalene tshidavhidzana na humbulosoko muthusa ngenoni sa mudivi
+
+  ref: ahuna khaelo na nthihi ine ya ṋetshedza tsireledzo yo fhelelaho tsireledzo ya percent
+  hyp: ahuna khaelo na tshiine ya nethedzwa sireledzo yo fhelelaho sireledzo ya hundred percent
+
+  ref: ee nṋe ndi soko vhona unga vhaswa vha hune nda dzula hone vha funa zwiambaro zwa musalauno u fhira zwiambaro zwa sialala nga uri vha zwi zwiambaro zwa musalauno vha zwiambara ḓuvha na ḓuvha ngeno zwiambaro zwa sialala vha tshi to zwiambara tshiṅwe tshifhinga luthihi kana luvhili kha ṅwaha zwenezwo musi hu ḓuvha ḽa hone ḽa zwa sialala kana musi vha tshi khou ya mitshatoni
+  hyp: nedesukuvhuṅavhaswa hune ndadzwaoni vhafunasweambarozwamisala u nofhira zwambarozwasielalga uri zwambarozwamisala uno vhazwambaladuvhanadukeno zwambarozwasielala vhatshuduzwiambaratshushifhinga vhuthi kana luvhili kha nwa zwaneswamosi vhuḓuvhalahone lazwasielala kana musi vha tshukhuya mitshaṱoni
+
+  ref: u sa tsireledzea ha zwiḽiwa zwi tshi khou ṱuṱuwedzwa nga kiḽima zwi ita uri mutakalo wa tshitshavha u si vhe wavhuḓi nahone zwi ita uri vhathu vha sokou vha na malwadze lwadze nga nṱhani ha zwitzhili zwo fhambananaho
+  hyp: u satsereledzea zwiḽiwa zwiṱututuwedzwa ngakilima zwitori mutakalo washitshavha u sivhewavhuḓi nahone zwitoriwa thwasokuvha namalwadzivhadzinganthania zwitsheli zwufhambana nao
+
+  ref: nṋe ndi vhona unga maapuḽa dzi banana maswiri mapierre dzi nḓirivhe ndi magwavha ndi vhona unga ndi yone mitshelo ine ya thusa u fhaṱa maswole a muvhili wa muthu
+  hyp: ne ndivhona unga maapula dzibanana maswiri mapiere dzindirivhe ndi magwavha ndivhono nga ndione mitshelo ine yathusa u fhatahmasolea muvhiliwa muthu
+
+== summary ==
+corpus             n     WER     CER     MER     WIL     WIP
+nchlt_test       200   0.321   0.080   0.312   0.493   0.507
+anv_dev_test     200   0.797   0.215   0.797   0.925   0.075

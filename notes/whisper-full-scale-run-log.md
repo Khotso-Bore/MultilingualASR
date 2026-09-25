@@ -1,0 +1,69 @@
+# Whisper Full-Scale Run - Live Tracking
+
+Live log for the local M4/MPS full-scale Whisper run, kept up to date as it
+trains. Not a substitute for `notes/pilot-ven-results.md` (the pilot
+write-up) - this file exists specifically to show progress *during* a long
+run, gets folded into the pilot notes once it finishes.
+
+## Config
+
+- Script: `src/asr/pilot_finetune_whisper_mps_ven.py`
+- Resumed from: `results/whisper-ven-pilot-v2/final` (best pilot so far, WER 0.182 / CER 0.048)
+- Data: full NCHLT + ANV train pool (`--train-clips 100000`, clamped to the
+  actual pool size - 60,087 raw clips, ~36,600 expected after the 10s MPS
+  memory-safety filter), `--include-anv`
+- Epochs: 1 (reduced from an initial 2-epoch plan, to keep total time closer
+  to ~12-13h instead of ~25h - matches Seani's "fewer epochs" guidance)
+- Learning rate: 5e-5 (same as pilot v2)
+- Started: 2026-09-21, ~15:11 local time
+- Log file: `/tmp/whisper_full_scale_v3.log`
+
+## Why this run, and why this scope
+
+Both Colab and Kaggle turned out to be too much friction to run reliably
+(session resets, environment-detection edge cases, missing dependencies -
+see the notebook fixes earlier in this branch). Decision: run the full-scale
+Whisper training locally instead, since it's the stronger model (best pilot
+result) and the flagship number for the report. Wav2Vec2 stays at its
+validated pilot-scale number (WER 0.332) as supporting evidence rather than
+also being pushed to full scale, to keep this tractable on one laptop.
+
+Estimated time (~12-13h) is based on real measured throughput from the pilot
+v2 run (1.21s/clip-epoch), not a guess - same discipline that caught the
+original over-scoped Whisper v2 attempt earlier in this project (projected
+~51h, killed after 1.4h once the real step-rate revealed the problem). Will
+flag immediately here if the real step-rate looks off once training starts.
+
+## Progress log
+
+| Time | Status |
+|---|---|
+| 15:11 | Launched (1 epoch, resumed from pilot v2). Data mapping/filtering in progress (~60k raw clips). |
+| 15:26 | Still preprocessing - eval-set mapping done (500 clips), now filtering the full 60,087-clip train pool by the 10s length cap. Training hasn't started yet. No errors. |
+
+| 17:23 | Preprocessing finished (~1h), training actually started. Step 260/2,301 (11%), ~16-17s/step, tqdm ETA ~9h31m remaining. On track for the original ~12-13h total estimate. No errors. |
+
+| 19:18 | Step 645/2,301 (28%), ~16-17s/step holding steady, tqdm ETA ~7h43m remaining. No errors. |
+
+| 21:15 | Step 979/2,301 (42.5%), tqdm ETA ~9h35m remaining. Per-step rate has slowed to ~26-28s/step (from ~16-17s/step earlier) - `vm.swapusage` shows 24.2GB/25.6GB swap in use, so this looks like memory pressure/swapping, not a training error. No thermal warning (`pmset -g therm`), process still healthy (PID 39504, ~101min CPU time), no errors/traceback in the log. Revised total-time estimate if this rate holds: ~15-16h from launch (up from the original ~12-13h), finishing roughly mid-morning tomorrow rather than overnight. No loss/eval values are appearing in the log text itself (only tqdm progress bars) - likely `transformers` log verbosity suppressing `Trainer`'s periodic `{'loss': ...}` prints rather than a real absence of logging; eval only runs once at the very end anyway (`eval_strategy="epoch"`, 1 epoch total), so no eval WER/CER yet either way. |
+
+| 03:36 (Sep 22) | **Finished successfully.** Full 2,301/2,301 steps, 11h21m34s training time (the earlier swap-induced slowdown recovered - total time landed close to the original ~12-13h estimate despite the mid-run dip). No errors/traceback anywhere in the log. Training-time eval (on the mixed NCHLT-validation + ANV-dev set used during training, *not* the fixed 200-clip comparison sets): **WER 0.111 / CER 0.032** - a large jump from pilot v2's 0.182/0.048. Checkpoint saved to `results/whisper-ven-pilot-v2/final` - note this **overwrites** the smaller pilot-v2 checkpoint that used to live at that path (the script's resume-naming logic reuses the same `-v2` suffix regardless of how many times it's resumed from itself); the numbers there are now this full-scale run's, not the old 7,325-clip pilot's. Now running the standardized eval (`zero_shot_baseline_ven.py --save-predictions`, same fixed 200-clip seed-42 NCHLT test / ANV dev_test sets as the rest of the comparison table) to get a number directly comparable to the existing pilot v1/v2 rows - in progress, will fold into `notes/pilot-ven-results.md` once done. |
+
+*(updated as the run progresses - see notes below on update cadence. An hourly session-local loop, job `ff7d261c`, is checking this automatically now.)*
+
+## A note on update cadence
+
+I can't wake myself up on a timer inside a normal chat session - I only get
+to check on this run when you message me, or via the one-shot notification
+when the whole process finishes (not incremental checkpoints along the way).
+So "every hour automatically, without you asking" isn't something I can do
+as a plain background habit in this session.
+
+Two ways to actually get that:
+1. **Just ping me periodically** ("how's it looking") - I'll pull the real
+   log and update this file every time, same as I've been doing.
+2. **Use `/loop`** (e.g. `/loop 90m`) if you want me to self-pace and check
+   in on a timer without you having to prompt each time - that's the
+   mechanism actually built for this.
+
+Defaulting to (1) unless you want (2) set up instead.

@@ -1,22 +1,32 @@
-"""Pilot AfriHuBERT fine-tune for Tshivenda on Apple Silicon (MPS).
+"""Pilot MMS fine-tune for Tshivenda on Apple Silicon (MPS).
 
-Third distinct ASR model family for the comparison Seani asked for (Wav2Vec2
-and Whisper are the other two - HuBERT uses a different self-supervised
-pretraining objective: masked prediction of offline k-means cluster labels,
-vs Wav2Vec2's contrastive prediction over quantized latents). Checked and
-confirmed ajesujoba/AfriHuBERT covers Tshivenda ('ven' in its 1240 language
-tags) and loads via standard transformers (HubertModel/HubertForCTC) - no
-extra toolkit needed, unlike e.g. ESPnet-native models.
+Fourth ASR model family attempt, replacing AfriHuBERT (6/6 configurations
+failed - see notes/pilot-ven-results.md). Per Seani's guidance: keep trying
+model families, and it is fine if a checkpoint has no confirmed Tshivenda
+coverage as long as fine-tuning can be made to work - that is exactly the
+situation with the two working models already in this repo. Whisper has no
+<|ven|> token at all (a Swahili placeholder is used instead - see
+pilot_finetune_whisper_mps_ven.py); Wav2Vec2 XLS-R-300M was not specifically
+labeled with Venda either. Both work because a custom CTC tokenizer
+(tokenizers/ven/) is fine-tuned on top of a strong general acoustic backbone,
+not because the base checkpoint already "knew" the language.
 
-Mirrors src/asr/pilot_finetune_wav2vec2_mps_ven.py's structure/settings exactly (same data,
-tokenizer, collator, MPS memory-safety config) with the model swapped.
+Why MMS (facebook/mms-300m): checked facebook/mms-1b-all (the 1,162-language
+fine-tuned-with-adapters checkpoint) and it does not list Venda. This script
+uses facebook/mms-300m instead - the self-supervised base checkpoint, not
+fine-tuned for any specific language - pretrained on ~500,000 hours across
+1,400+ languages (vs. XLS-R-300M's much smaller multilingual pretraining
+pool). Architecturally it is a Wav2Vec2 model, so this script is almost a
+line-for-line copy of pilot_finetune_wav2vec2_mps_ven.py with the base
+checkpoint swapped - same tokenizer, same collator, same training loop.
 
-NOT the real Stage 1 run - see notebooks/colab_hubert_ven.ipynb for the full
-Colab training. This is a reduced overnight pilot on the M4 to prove the
-recipe works before spending Colab hours, same pattern as the Wav2Vec2 pilot.
+NOT the real Stage 1 run (needs a CUDA GPU). This is a reduced overnight
+pilot on the M4 to (a) prove the training loop end-to-end with this
+checkpoint, (b) get a first fine-tuned WER, (c) surface bugs before
+spending Colab hours - same role as the other two pilots.
 
 Usage:
-    PYTORCH_ENABLE_MPS_FALLBACK=1 python src/asr/pilot_finetune_hubert_mps_ven.py
+    PYTORCH_ENABLE_MPS_FALLBACK=1 python src/asr/pilot_finetune_mms_mps_ven.py
     ... --train-clips 50 --eval-clips 20 --epochs 1   # smoke test
 """
 
@@ -28,11 +38,11 @@ import torch
 from datasets import Audio, Features, Value, load_dataset
 from jiwer import cer, wer
 from transformers import (
-    HubertForCTC,
     Trainer,
     TrainingArguments,
     Wav2Vec2CTCTokenizer,
     Wav2Vec2FeatureExtractor,
+    Wav2Vec2ForCTC,
     Wav2Vec2Processor,
 )
 
@@ -42,13 +52,13 @@ sys.path.insert(0, str(Path(__file__).resolve().parent))
 REPO_ROOT = Path(__file__).resolve().parents[2]
 DATA = REPO_ROOT / "dataset" / "processed"
 TOKENIZER_DIR = REPO_ROOT / "tokenizers" / "ven"
-OUTPUT_DIR = REPO_ROOT / "results" / "hubert-ven-pilot"
-BASE_CHECKPOINT = "ajesujoba/AfriHuBERT"
+OUTPUT_DIR = REPO_ROOT / "results" / "mms-ven-pilot"
+BASE_CHECKPOINT = "facebook/mms-300m"
 
 
 def main(args):
     device = "mps" if torch.backends.mps.is_available() else "cpu"
-    print(f"AfriHuBERT pilot fine-tune | device: {device} | train clips: {args.train_clips} | "
+    print(f"MMS pilot fine-tune | device: {device} | train clips: {args.train_clips} | "
           f"eval clips: {args.eval_clips} | epochs: {args.epochs}")
 
     train_files = [str(DATA / "nchlt_ven" / "train.csv")]
@@ -60,11 +70,10 @@ def main(args):
     features = Features({"audio": Audio(sampling_rate=16000), "transcript": Value("string")})
     ds = load_dataset("csv", data_files={"train": train_files, "eval": eval_files},
                       features=features)
+    # shuffle before select so multi-file loads are mixed, not blockwise
     ds["train"] = ds["train"].shuffle(seed=42).select(range(min(args.train_clips, len(ds["train"]))))
     ds["eval"] = ds["eval"].shuffle(seed=42).select(range(min(args.eval_clips, len(ds["eval"]))))
 
-    # HuBERT in transformers pairs with the same Wav2Vec2 processor classes -
-    # this is the standard HF pattern, not a workaround
     tokenizer = Wav2Vec2CTCTokenizer.from_pretrained(TOKENIZER_DIR)
     feature_extractor = Wav2Vec2FeatureExtractor(
         feature_size=1, sampling_rate=16000, padding_value=0.0,
@@ -113,37 +122,21 @@ def main(args):
         return {"wer": wer(label_str, pred_str), "cer": cer(label_str, pred_str)}
 
     if args.resume_from:
-        model = HubertForCTC.from_pretrained(args.resume_from, attn_implementation="eager")
+        # continue from an earlier pilot checkpoint - CTC head already sized to our vocab
+        model = Wav2Vec2ForCTC.from_pretrained(args.resume_from)
         print(f"resumed weights from {args.resume_from}")
     else:
-        model = HubertForCTC.from_pretrained(
-            args.model,
+        model = Wav2Vec2ForCTC.from_pretrained(
+            BASE_CHECKPOINT,
             ctc_loss_reduction="mean", ctc_zero_infinity=True,
             pad_token_id=processor.tokenizer.pad_token_id,
             vocab_size=len(processor.tokenizer),
             ignore_mismatched_sizes=True,
-            attn_implementation="eager",  # MPS's SDPA path errors on dropout - see train_classifier.py
         )
-    if not args.unfreeze_feature_encoder:
-        model.freeze_feature_encoder()
-
-    if args.disfavor_blank_init and not args.resume_from:
-        # counter CTC blank collapse: the freshly-initialized head's blank
-        # logit starts on equal footing with every other class, and blank is
-        # the "safe" low-loss local minimum CTC gradient descent tends to
-        # fall into first. Push the blank bias down at init so the model
-        # starts slightly favouring non-blank predictions instead.
-        with torch.no_grad():
-            model.lm_head.bias[processor.tokenizer.pad_token_id] -= args.blank_bias_penalty
-        print(f"disfavoring blank at init: pad_token_id={processor.tokenizer.pad_token_id} "
-              f"bias -= {args.blank_bias_penalty}")
-
+    model.freeze_feature_encoder()
     model = model.to(device)
 
-    if args.out_name:
-        out_dir = OUTPUT_DIR.parent / args.out_name
-    else:
-        out_dir = OUTPUT_DIR if not args.resume_from else OUTPUT_DIR.parent / (OUTPUT_DIR.name + "-v2")
+    out_dir = OUTPUT_DIR if not args.resume_from else OUTPUT_DIR.parent / (OUTPUT_DIR.name + "-v2")
 
     training_args = TrainingArguments(
         output_dir=str(out_dir),
@@ -158,10 +151,10 @@ def main(args):
         greater_is_better=False,
         logging_steps=20,
         learning_rate=args.learning_rate,
-        warmup_ratio=args.warmup_ratio,
+        warmup_ratio=0.1,
         num_train_epochs=args.epochs,
-        fp16=False,
-        gradient_checkpointing=True,
+        fp16=False,  # not supported on MPS
+        gradient_checkpointing=True,  # essential on 24GB unified memory
         max_grad_norm=1.0,
         push_to_hub=False,
         report_to=[],
@@ -178,15 +171,16 @@ def main(args):
         train_dataset=ds["train"],
         eval_dataset=ds["eval"],
         processing_class=processor.feature_extractor,
-        callbacks=[EarlyStoppingCallback(early_stopping_patience=args.patience)],
+        callbacks=[EarlyStoppingCallback(early_stopping_patience=2)],
     )
 
     trainer.train()
     final = trainer.evaluate()
-    print("\n== afrihubert pilot result ==")
+    print("\n== MMS pilot result ==")
     print(f"eval WER: {final.get('eval_wer'):.3f} | eval CER: {final.get('eval_cer'):.3f}")
     print("(zero-shot Whisper Large v3 baseline on NCHLT test: WER 1.108, CER 0.763)")
-    print("(Wav2Vec2 pilot v2 on NCHLT test: WER 0.332, CER 0.074)")
+    print("(Wav2Vec2 XLS-R-300M pilot v2 on NCHLT test: WER 0.332, CER 0.074)")
+    print("(Whisper pilot v2 on NCHLT test: WER 0.182, CER 0.048)")
 
     trainer.save_model(str(out_dir / "final"))
     processor.save_pretrained(str(out_dir / "final"))
@@ -195,25 +189,17 @@ def main(args):
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--model", default=BASE_CHECKPOINT,
-                        help="HF checkpoint id, e.g. Orange/SSA-HuBERT-base-5k")
-    parser.add_argument("--out-name", default=None,
-                        help="override the output dir name under results/ (default: derived from --resume-from)")
     parser.add_argument("--train-clips", type=int, default=5000)
     parser.add_argument("--eval-clips", type=int, default=500)
     parser.add_argument("--epochs", type=int, default=3)
     parser.add_argument("--batch-size", type=int, default=2)
     parser.add_argument("--grad-accum", type=int, default=8)
-    parser.add_argument("--max-input-seconds", type=float, default=10.0)
+    parser.add_argument("--max-input-seconds", type=float, default=10.0,
+                        help="drop clips longer than this (memory cap for MPS); 0 disables")
     parser.add_argument("--learning-rate", type=float, default=1e-4)
-    parser.add_argument("--resume-from", default=None)
-    parser.add_argument("--include-anv", action="store_true")
-    parser.add_argument("--unfreeze-feature-encoder", action="store_true",
-                        help="diagnostic: don't freeze the conv feature encoder")
-    parser.add_argument("--warmup-ratio", type=float, default=0.1)
-    parser.add_argument("--disfavor-blank-init", action="store_true",
-                        help="push the CTC blank/pad logit down at init to counter blank collapse")
-    parser.add_argument("--blank-bias-penalty", type=float, default=5.0)
-    parser.add_argument("--patience", type=int, default=2)
+    parser.add_argument("--resume-from", default=None,
+                        help="path to a previous pilot final dir to continue training from")
+    parser.add_argument("--include-anv", action="store_true",
+                        help="mix ANV train/dev CSVs into the data (still capped by max-input-seconds)")
     args = parser.parse_args()
     main(args)

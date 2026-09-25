@@ -113,6 +113,45 @@ AfroXLM-RoBERTa is the strongest available model for Tshivenda NLP tasks
 specifically because plain XLM-R's pretraining underrepresents the language.
 A genuinely useful, literature-consistent result for the report.
 
+### Training progression: when did each model start (not) learning
+
+No per-epoch model checkpoints survive from these runs to generate
+qualitative per-article predictions the way the ASR notes do (each fold
+shared one `output_dir`, overwritten by the next fold before this need came
+up) - but the raw per-epoch metrics do survive in the actual training logs
+(`results/logs/classifier_final_5fold_afroxlmr.log` /
+`classifier_final_5fold_xlmr.log`), which is still a real, honest
+"when did it start improving" story, just numeric rather than example-based.
+
+**AfroXLM-RoBERTa, fold 1** (representative - all 5 folds follow the same
+shape, see the full log for the rest):
+
+| Epoch | Accuracy | Macro F1 |
+|---|---|---|
+| 1 | 0.500 | 0.333 *(chance - hasn't learned anything yet)* |
+| 2 | **0.597** | **0.597** *(the jump - real signal found)* |
+| 3 | 0.528 | 0.457 |
+| 4 | 0.569 | 0.544 |
+| 5 | 0.556 | 0.547 *(early stopping triggers - epoch 2 kept via `load_best_model_at_end`)* |
+
+**XLM-RoBERTa, fold 1** - the contrast:
+
+| Epoch | Accuracy | Macro F1 |
+|---|---|---|
+| 1 | 0.500 | 0.333 |
+| 2 | 0.500 | 0.333 |
+| 3 | 0.500 | 0.333 |
+| 4 | 0.500 | 0.333 *(early stopping triggers - never moved once)* |
+
+The difference is stark and visible epoch-by-epoch, not just in the final
+average: AfroXLM-RoBERTa finds real signal in a single epoch (2) and then
+the eval accuracy fluctuates around that level for the rest of training
+(normal noise on a 72-example eval fold, not further learning) - the model
+that's kept is the epoch-2 peak, not the final epoch. XLM-RoBERTa never
+leaves exact chance at any point in training, on any epoch - not a slow
+learner that needed more time, a model that found nothing at all to learn
+from with this setup.
+
 ## How to regenerate / retrain
 
 ```bash
