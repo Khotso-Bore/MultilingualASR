@@ -1,0 +1,57 @@
+pilot fine-tune | device: mps | train clips: 100 | eval clips: 20 | epochs: 1
+Map:   0%|          | 0/100 [00:00<?, ? examples/s]Map:  14%|█▍        | 14/100 [00:00<00:00, 101.11 examples/s]Map:  40%|████      | 40/100 [00:00<00:00, 180.63 examples/s]Map:  68%|██████▊   | 68/100 [00:00<00:00, 215.97 examples/s]Map:  94%|█████████▍| 94/100 [00:00<00:00, 228.06 examples/s]Map: 100%|██████████| 100/100 [00:00<00:00, 206.28 examples/s]
+Map:   0%|          | 0/20 [00:00<?, ? examples/s]Map: 100%|██████████| 20/20 [00:00<00:00, 209.14 examples/s]
+Filter:   0%|          | 0/100 [00:00<?, ? examples/s]Filter: 100%|██████████| 100/100 [00:00<00:00, 139.62 examples/s]Filter: 100%|██████████| 100/100 [00:00<00:00, 139.51 examples/s]
+Filter:   0%|          | 0/20 [00:00<?, ? examples/s]Filter: 100%|██████████| 20/20 [00:00<00:00, 132.12 examples/s]Filter: 100%|██████████| 20/20 [00:00<00:00, 131.61 examples/s]
+clip-length cap 10.0s: train 100->100, eval 20->19
+Loading weights:   0%|          | 0/422 [00:00<?, ?it/s]Loading weights: 100%|██████████| 422/422 [00:00<00:00, 60492.01it/s]
+[transformers] [1mWav2Vec2ForCTC LOAD REPORT[0m from: facebook/wav2vec2-large-xlsr-53
+Key                          | Status     | 
+-----------------------------+------------+-
+project_hid.weight           | UNEXPECTED | 
+quantizer.codevectors        | UNEXPECTED | 
+project_hid.bias             | UNEXPECTED | 
+project_q.bias               | UNEXPECTED | 
+quantizer.weight_proj.weight | UNEXPECTED | 
+project_q.weight             | UNEXPECTED | 
+quantizer.weight_proj.bias   | UNEXPECTED | 
+lm_head.bias                 | MISSING    | 
+lm_head.weight               | MISSING    | 
+
+Notes:
+- UNEXPECTED:	can be ignored when loading from different task/architecture; not ok if you expect identical arch.
+- MISSING:	those params were newly initialized because missing from the checkpoint. Consider training on your downstream task.
+[transformers] warmup_ratio is deprecated and will be removed in v5.2. Use `warmup_steps` instead.
+  0%|          | 0/50 [00:00<?, ?it/s]/Users/mulisamusehane/Documents/GitHub/MultilingualASR/.venv/lib/python3.12/site-packages/torch/utils/data/dataloader.py:759: UserWarning: 'pin_memory' argument is set as true but not supported on MPS now, device pinned memory won't be used.
+  super().__init__(loader)
+/Users/mulisamusehane/Documents/GitHub/MultilingualASR/.venv/lib/python3.12/site-packages/torch/nn/functional.py:3159: UserWarning: The operator 'aten::_ctc_loss' is not currently supported on the MPS backend and will fall back to run on the CPU. This may have performance implications. (Triggered internally at /Users/runner/work/pytorch/pytorch/aten/src/ATen/mps/MPSFallback.mm:34.)
+  return torch.ctc_loss(
+  2%|▏         | 1/50 [00:01<00:51,  1.05s/it]  4%|▍         | 2/50 [00:02<01:05,  1.36s/it]  6%|▌         | 3/50 [00:04<01:09,  1.48s/it]  8%|▊         | 4/50 [00:05<01:03,  1.37s/it] 10%|█         | 5/50 [00:06<00:59,  1.33s/it] 12%|█▏        | 6/50 [00:07<00:56,  1.28s/it] 14%|█▍        | 7/50 [00:08<00:51,  1.21s/it] 16%|█▌        | 8/50 [00:10<00:50,  1.21s/it] 18%|█▊        | 9/50 [00:11<00:49,  1.21s/it] 20%|██        | 10/50 [00:12<00:45,  1.13s/it] 22%|██▏       | 11/50 [00:13<00:47,  1.21s/it] 24%|██▍       | 12/50 [00:14<00:44,  1.16s/it] 26%|██▌       | 13/50 [00:15<00:43,  1.17s/it] 28%|██▊       | 14/50 [00:17<00:43,  1.22s/it] 30%|███       | 15/50 [00:18<00:42,  1.22s/it] 32%|███▏      | 16/50 [00:20<00:44,  1.30s/it] 34%|███▍      | 17/50 [00:21<00:42,  1.30s/it] 36%|███▌      | 18/50 [00:22<00:39,  1.22s/it] 38%|███▊      | 19/50 [00:23<00:39,  1.27s/it] 40%|████      | 20/50 [00:24<00:35,  1.20s/it]                                                40%|████      | 20/50 [00:25<00:35,  1.20s/it] 42%|████▏     | 21/50 [00:26<00:35,  1.23s/it] 44%|████▍     | 22/50 [00:27<00:32,  1.17s/it] 46%|████▌     | 23/50 [00:27<00:29,  1.09s/it] 48%|████▊     | 24/50 [00:29<00:29,  1.15s/it] 50%|█████     | 25/50 [00:30<00:26,  1.06s/it] 52%|█████▏    | 26/50 [00:31<00:28,  1.17s/it] 54%|█████▍    | 27/50 [00:32<00:27,  1.20s/it] 56%|█████▌    | 28/50 [00:34<00:26,  1.20s/it] 58%|█████▊    | 29/50 [00:35<00:23,  1.14s/it] 60%|██████    | 30/50 [00:36<00:23,  1.17s/it] 62%|██████▏   | 31/50 [00:37<00:21,  1.11s/it] 64%|██████▍   | 32/50 [00:38<00:18,  1.02s/it] 66%|██████▌   | 33/50 [00:39<00:17,  1.01s/it] 68%|██████▊   | 34/50 [00:40<00:17,  1.08s/it] 70%|███████   | 35/50 [00:41<00:18,  1.26s/it] 72%|███████▏  | 36/50 [00:43<00:17,  1.27s/it] 74%|███████▍  | 37/50 [00:44<00:17,  1.33s/it] 76%|███████▌  | 38/50 [00:46<00:16,  1.35s/it] 78%|███████▊  | 39/50 [00:47<00:13,  1.25s/it] 80%|████████  | 40/50 [00:48<00:12,  1.22s/it]                                                80%|████████  | 40/50 [00:48<00:12,  1.22s/it] 82%|████████▏ | 41/50 [00:49<00:10,  1.15s/it] 84%|████████▍ | 42/50 [00:50<00:09,  1.17s/it] 86%|████████▌ | 43/50 [00:51<00:07,  1.13s/it] 88%|████████▊ | 44/50 [00:52<00:07,  1.18s/it] 90%|█████████ | 45/50 [00:54<00:05,  1.18s/it] 92%|█████████▏| 46/50 [00:55<00:04,  1.23s/it] 94%|█████████▍| 47/50 [00:56<00:03,  1.24s/it] 96%|█████████▌| 48/50 [00:57<00:02,  1.20s/it] 98%|█████████▊| 49/50 [00:58<00:01,  1.12s/it]100%|██████████| 50/50 [00:59<00:00,  1.14s/it]{'loss': '23.47', 'grad_norm': '16.24', 'learning_rate': '6.889e-05', 'epoch': '0.4'}
+{'loss': '21.03', 'grad_norm': '19.26', 'learning_rate': '2.444e-05', 'epoch': '0.8'}
+
+  0%|          | 0/10 [00:00<?, ?it/s][A
+ 20%|██        | 2/10 [00:00<00:00, 10.31it/s][A
+ 40%|████      | 4/10 [00:00<00:00,  7.54it/s][A
+ 50%|█████     | 5/10 [00:00<00:00,  6.63it/s][A
+ 60%|██████    | 6/10 [00:00<00:00,  6.90it/s][A
+ 70%|███████   | 7/10 [00:01<00:00,  6.19it/s][A
+ 80%|████████  | 8/10 [00:01<00:00,  5.62it/s][A
+ 90%|█████████ | 9/10 [00:01<00:00,  5.49it/s][A
+100%|██████████| 10/10 [00:01<00:00,  6.01it/s][A                                               
+                                               [A100%|██████████| 50/50 [01:02<00:00,  1.14s/it]
+100%|██████████| 10/10 [00:01<00:00,  6.01it/s][A
+                                               [A{'eval_loss': '20.82', 'eval_wer': '0.9674', 'eval_cer': '0.9638', 'eval_runtime': '2.252', 'eval_samples_per_second': '8.438', 'eval_steps_per_second': '4.441', 'epoch': '1'}
+
+Writing model shards:   0%|          | 0/1 [00:00<?, ?it/s][A
+Writing model shards: 100%|██████████| 1/1 [00:00<00:00,  1.91it/s][AWriting model shards: 100%|██████████| 1/1 [00:00<00:00,  1.90it/s]
+                                               100%|██████████| 50/50 [01:05<00:00,  1.14s/it]100%|██████████| 50/50 [01:07<00:00,  1.35s/it]
+/Users/mulisamusehane/Documents/GitHub/MultilingualASR/.venv/lib/python3.12/site-packages/torch/utils/data/dataloader.py:759: UserWarning: 'pin_memory' argument is set as true but not supported on MPS now, device pinned memory won't be used.
+  super().__init__(loader)
+{'train_runtime': '65.72', 'train_samples_per_second': '1.522', 'train_steps_per_second': '0.761', 'train_loss': '21.79', 'epoch': '1'}
+  0%|          | 0/10 [00:00<?, ?it/s] 20%|██        | 2/10 [00:00<00:00, 10.55it/s] 40%|████      | 4/10 [00:00<00:00,  7.63it/s] 50%|█████     | 5/10 [00:00<00:00,  6.70it/s] 60%|██████    | 6/10 [00:00<00:00,  6.96it/s] 70%|███████   | 7/10 [00:01<00:00,  6.27it/s] 80%|████████  | 8/10 [00:01<00:00,  5.67it/s] 90%|█████████ | 9/10 [00:01<00:00,  5.55it/s]100%|██████████| 10/10 [00:01<00:00,  6.33it/s]100%|██████████| 10/10 [00:01<00:00,  6.52it/s]
+
+== pilot result ==
+eval WER: 0.967 | eval CER: 0.964
+(zero-shot Whisper Large v3 baseline on NCHLT test: WER 1.108, CER 0.763)
+Writing model shards:   0%|          | 0/1 [00:00<?, ?it/s]Writing model shards: 100%|██████████| 1/1 [00:01<00:00,  1.48s/it]Writing model shards: 100%|██████████| 1/1 [00:01<00:00,  1.48s/it]
+model saved -> /Users/mulisamusehane/Documents/GitHub/MultilingualASR/results/xlsr53-timing-probe/final

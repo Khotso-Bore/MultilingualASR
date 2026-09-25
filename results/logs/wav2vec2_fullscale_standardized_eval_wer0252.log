@@ -1,0 +1,52 @@
+checkpoint: results/wav2vec2-ven-pilot-v2/final | device: mps | sample per corpus: 200 | seed: 42
+Loading weights:   0%|          | 0/424 [00:00<?, ?it/s]Loading weights: 100%|██████████| 424/424 [00:00<00:00, 9315.84it/s]
+  nchlt_test: 50/200 (11.9 clips/s)
+  nchlt_test: 100/200 (0.1 clips/s)
+  nchlt_test: 150/200 (0.2 clips/s)
+  nchlt_test: 200/200 (0.2 clips/s)
+
+== nchlt_test ==
+n=200  WER=0.252  CER=0.056  MER=0.247  WIL=0.398  WIP=0.602  empty predictions=0
+  ref: i fanela u dzhiela nzhele
+  hyp: i fanela u dzhiela nzhele
+
+  ref: na vhuḓifhinduleli kha vhashumi nahone
+  hyp: na vhuḓifhinduleli kha vhashumi nahone
+
+  ref: na u vhambedzea na dza
+  hyp: na u vhambedzeana dza
+
+  ref: ya u sumbedzwa tshirunzi na
+  hyp: ya u sumbedzwa tshirunzi na
+
+  ref: vhulimi zwine zwa khou bvelela
+  hyp: vhulimi zwine zwa khou bvelela
+
+  predictions saved -> results/preds_wav2vec2_full/wav2vec2-final_nchlt_test.csv
+  anv_dev_test: 50/200 (2.5 clips/s)
+  anv_dev_test: 100/200 (2.5 clips/s)
+  anv_dev_test: 150/200 (0.6 clips/s)
+  anv_dev_test: 200/200 (0.8 clips/s)
+
+== anv_dev_test ==
+n=200  WER=0.457  CER=0.106  MER=0.451  WIL=0.642  WIP=0.358  empty predictions=0
+  ref: khombo ndi musi vhukonani ho no kalula ni wane khonani yaṋu iṅwe hanefho online a tshi vhoni humbela thuso ya masheleni ngauri hu ḓovha hu kale ni tshi davhidzana naye na humbula u sokou muthusa ngeno ni sa muḓivhi
+  hyp: khombo ndi musi vhukonani hono kalulaniwane khonani ya nu iṅwe hane fhooḽini a tshi vhoni humbela thuso ya masheliningauri hu ḓovha hu kalene tshi davhidzana naye na humbulou so komuthusa ngenoni sa muḓivhi
+
+  ref: ahuna khaelo na nthihi ine ya ṋetshedza tsireledzo yo fhelelaho tsireledzo ya percent
+  hyp: a hu na khaelo na tihi ine ya metshedzwa tsireledzo yo fhelelaho sireledzo ya hndretpesent
+
+  ref: ee nṋe ndi soko vhona unga vhaswa vha hune nda dzula hone vha funa zwiambaro zwa musalauno u fhira zwiambaro zwa sialala nga uri vha zwi zwiambaro zwa musalauno vha zwiambara ḓuvha na ḓuvha ngeno zwiambaro zwa sialala vha tshi to zwiambara tshiṅwe tshifhinga luthihi kana luvhili kha ṅwaha zwenezwo musi hu ḓuvha ḽa hone ḽa zwa sialala kana musi vha tshi khou ya mitshatoni
+  hyp: eṋe ndi so khou vhono nga vhaswa vhahune nda dzulahone vha funa zwi yambaro zwa musalaune u fhira zw yambora zwa sialalngauri vhawzwiyambaro zwa musala uno vha zwo ambarwa ḓuvhana ḓuwa giano zwi yambor zwa sielelo vha tshito zwi yambara tshimu tshifhinga duthi kana luvhili khaṅwa zwene zwamuzwi vhu ḓuvha ḽahone ḽa zwa sialala kana musi vha tshi khouymitshatoni
+
+  ref: u sa tsireledzea ha zwiḽiwa zwi tshi khou ṱuṱuwedzwa nga kiḽima zwi ita uri mutakalo wa tshitshavha u si vhe wavhuḓi nahone zwi ita uri vhathu vha sokou vha na malwadze lwadze nga nṱhani ha zwitzhili zwo fhambananaho
+  hyp: u si ta tsireledze a zwiḽiwa zwi tshi khou ṱoṱuwedzwa nga kilima zwi itore mutakalo wa tshitshavha u sivhewavhuḓi nahone zwiito uri vhathu vha soko u vha na malwadzelwadze nga nṱhaniha zwitheli zwo fhambana naho
+
+  ref: nṋe ndi vhona unga maapuḽa dzi banana maswiri mapierre dzi nḓirivhe ndi magwavha ndi vhona unga ndi yone mitshelo ine ya thusa u fhaṱa maswole a muvhili wa muthu
+  hyp: nṋe ndi vhona u nga maapuḽa dzibanana maswiri mapiere dzinḓirivhe ndmagwavha ndi vhono nga ndi yone mitshelo ine ya thusa u fhaṱa mashole a muvhili wa muthu
+
+  predictions saved -> results/preds_wav2vec2_full/wav2vec2-final_anv_dev_test.csv
+== summary ==
+corpus             n     WER     CER     MER     WIL     WIP
+nchlt_test       200   0.252   0.056   0.247   0.398   0.602
+anv_dev_test     200   0.457   0.106   0.451   0.642   0.358

@@ -1,11 +1,23 @@
 # Run Logs
 
-**Run count so far: 22 total training runs** (6 classifier, 2 Wav2Vec2 pilots,
-6 AfriHuBERT attempts, 3 Whisper runs - v1 done, an aborted v2 attempt,
-a rescoped v2 done, 2 MMS attempts, 1 w2v-BERT attempt, 1 data2vec-audio
-attempt, 1 UniSpeech attempt). Updated as each new run finishes; every run
-(success, failure, or
-abort) gets one entry here.
+**Run count so far: 35 total training runs** (6 classifier + 1 error-propagation
+degradation study, 2 Wav2Vec2 pilots + 1 Wav2Vec2 full-scale + 1 Wav2Vec2
+augmentation pilot, 6 AfriHuBERT attempts, 3 pilot-scale Whisper runs (v1
+done, an aborted v2 attempt, a rescoped v2 done) + 1 Whisper full-scale +
+1 Whisper augmentation pilot + 1 Whisper matched-volume augmentation
+follow-up, 2 MMS attempts, 1 w2v-BERT attempt, 1 data2vec-audio attempt,
+1 UniSpeech attempt, 2 XLSR-53 attempts, 1 SSA-HuBERT attempt, 3 two-stage
+LoRA runs (Stage 1 bad-LR + Stage 1 fixed-LR + Stage 2) + 1 same-capacity
+LoRA control). Updated as each new run finishes; every run (success,
+failure, or abort) gets one entry here.
+
+**A note on where later logs live**: runs from Objective 1's full-scale
+push onward (2026-09-21 onward) were originally redirected to `/tmp/*.log`
+during the session rather than straight to this directory, since they were
+long-running background jobs checked on incrementally. Copied into this
+directory afterward once each run finished, so the evidence trail stays
+complete here rather than depending on `/tmp` (which doesn't persist).
+Filenames below are the copied names, not the original `/tmp` ones.
 
 Raw (progress-bar-stripped) console output from every training run, kept as
 evidence alongside the summarised numbers in `notes/`. Chronological order
@@ -235,3 +247,147 @@ validated in its own paper for cross-lingual transfer to unseen languages.
 (AfriHuBERT, MMS, w2v-BERT, data2vec-audio). Both working checkpoints share
 a multi-task/discriminative element beyond pure self-supervision. See
 `notes/pilot-ven-results.md`.
+
+## Objective 1: Whisper and Wav2Vec2 full-scale (2026-09-21/24)
+
+Both models named in Objective 1, taken from pilot scale to the full
+60,087-clip combined NCHLT+ANV pool - the actual headline numbers, not
+another pilot.
+
+1. `whisper_fullscale_wer0103.log` - resumed from pilot v2 (0.182), 1
+   epoch, full pool, ~11h21m training. No errors. Training-time eval
+   WER 0.111/CER 0.032. Standardized 200-clip eval (not in this log,
+   generated separately via `zero_shot_baseline_ven.py`): **WER 0.103,
+   CER 0.032** on NCHLT.
+2. `wav2vec2_fullscale_train.log` - same methodology, resumed from
+   Wav2Vec2 pilot v2 (0.332). Training-time eval WER 0.425/CER 0.099
+   (mixed NCHLT+ANV eval set).
+3. `wav2vec2_fullscale_standardized_eval_wer0252.log` - standardized
+   200-clip eval of the checkpoint from run 2: **WER 0.252, CER 0.056**
+   on NCHLT, 0.457/0.106 on ANV.
+
+Both full-scale runs completed with no errors. See `notes/pilot-ven-results.md`
+("Whisper full-scale" and "Wav2Vec2 XLS-R-300M full-scale" sections) for
+the real reference-vs-hypothesis examples and checkpoint-by-checkpoint
+training-progression tables built from these runs.
+
+## Objective 2: data augmentation - SpecAugment + speed perturbation (2026-09-23/25)
+
+`src/asr/audio_augment_ven.py` (speed perturbation) plus HuggingFace's
+built-in SpecAugment config flags, added to both pilot scripts.
+
+1. `wav2vec2_augment_pilot_wer0269.log` - 5,000 NCHLT clips (tripled to
+   15,000 by augmentation), 3 epochs, fresh XLS-R-300M. Standardized eval:
+   **WER 0.269, CER 0.060** - down from the un-augmented pilot's 0.332/0.074,
+   a 56% relative WER reduction from this one change alone.
+2. `whisper_augment_pilot_wer0217.log` / `whisper_augment_pilot_standardized_eval.log`
+   - same recipe on Whisper: **WER 0.217, CER 0.052** - down from 0.265/0.060,
+   an 18% relative reduction (smaller than Wav2Vec2's, since Whisper had
+   less headroom to begin with).
+3. `whisper_augment_matchedvolume_wer0187.log` / `whisper_augment_matchedvolume_standardized_eval.log`
+   - follow-up at larger scale: 20,000 real clips augmented to 60,000
+   effective examples (matching the full-scale run's total training
+   volume). Standardized eval: **WER 0.187, CER 0.047** - better than the
+   5k-clip augmented pilot, but still clearly behind full-scale's real-data
+   result (0.103). Conclusion: augmentation helps at every scale tried, but
+   doesn't substitute for genuinely more real data.
+
+**A real bug caught along the way**: the first two attempts at run 3 died
+silently within seconds (no traceback, just a multiprocessing semaphore
+warning) - `augment_oom_diagnostic_isolation_test.log` is the isolated test
+that helped confirm this was a memory issue (materializing all 60,000
+decoded audio arrays in one Python list before building the dataset), not
+the `nohup`/`caffeinate` launch wrapper it looked like at first. Fixed in
+both pilot scripts by switching to `Dataset.from_generator()`.
+
+See `notes/pilot-ven-results.md` ("Objective 2" section and its "Follow-up
+run" subsection) for full interpretation and real examples.
+
+## Objective 3: two-stage fine-tuning + LoRA (2026-09-22/24)
+
+LoRA support added to `pilot_finetune_whisper_mps_ven.py` via `peft`
+(`--lora` for a fresh wrap, `--lora-adapter-from` to continue a saved
+adapter - i.e. Stage 2 continuing Stage 1's adapter without touching the
+frozen base weights).
+
+1. `twostage_stage1_attempt1_badlr.log` - Stage 1 with the script's
+   full-fine-tune-tuned default learning rate (1e-5) - too low for LoRA to
+   move meaningfully in 3 epochs. Finished at WER 0.947, barely better than
+   zero-shot. Diagnosed (LoRA generally needs a much higher rate than full
+   fine-tuning) and relaunched rather than accepted.
+2. `twostage_stage1_attempt2_fixedlr_wer0517.log` - relaunched with
+   `--learning-rate 3e-4`. WER 0.628 -> 0.544 -> **0.517** across 3 epochs -
+   epoch 1 alone already beat attempt 1's entire 3-epoch result.
+3. `twostage_stage2_wer0360.log` - continued Stage 1's adapter on
+   NCHLT-only clips, 3 more epochs: 0.450 -> 0.377 -> **0.360**
+   (training-time eval).
+4. `twostage_standardized_eval_attempt1_buggygenconfig.log` - first merge
+   attempt lost the model's `language="sw"`/`task="transcribe"` generation
+   config during the adapter merge (a fresh base was reloaded for merging
+   without re-applying it). Came back at an impossible WER 1.989, caught
+   from the numbers not matching the qualitative evidence rather than
+   trusted.
+5. `twostage_standardized_eval_attempt2_fixed_wer0321.log` - fixed merge
+   (generation config set before merging, verified present in the saved
+   `generation_config.json`), re-run: **WER 0.321, CER 0.080** on NCHLT,
+   0.797/0.215 on ANV.
+6. `singlestage_lora_control_wer0404.log` / `singlestage_lora_control_standardized_eval_wer0384.log`
+   - the missing control: single-stage training with the *same* LoRA
+   config (rank 8, alpha 16, lr 3e-4) on the same 5k NCHLT clips, no Stage
+   1. Standardized eval: **WER 0.384, CER 0.095** - clearly worse than
+   two-stage's 0.321, confirming staging genuinely helps once LoRA capacity
+   is held constant (the original two-stage-vs-full-fine-tune comparison
+   had mixed staging and capacity together).
+
+See `notes/pilot-ven-results.md` ("Objective 3" section - documented as
+Run 1 / Run 2, not rewritten, since Run 1's confound-aware reasoning is
+what motivated Run 2's control) for the full interpretation, real examples,
+and checkpoint-by-checkpoint training-progression table.
+
+## Eighth model attempt: XLSR-53 (2026-09-24) - collapsed
+
+`facebook/wav2vec2-large-xlsr-53` - a candidate from the project's own
+literature review (Dar and Pushparaj, 2026, found it beat XLS-R-300M for
+low-resource Kashmiri).
+
+1. `xlsr53_attempt1_slow_step_falsealarm.log` - initial smoke test logged
+   one training step taking 15 minutes, which looked like a severe
+   architecture-specific slowdown. Diagnosed with a `--grad-accum 1` timing
+   probe rather than assumed: real per-step time was ~1-1.5s, normal for
+   this model size - the 15-minute figure was system memory pressure right
+   after a previous large run finished, not XLSR-53 itself.
+2. `xlsr53_attempt2_collapsed.log` - real pilot (5,000 NCHLT clips, 3
+   epochs, matching XLS-R-300M's own original validating pilot scale).
+   WER/CER frozen at exactly 0.9709/0.9614 across all 3 epochs. Confirmed
+   by direct inspection: every hypothesis is an empty string, the same
+   total-collapse signature as AfriHuBERT/MMS/w2v-BERT/data2vec-audio.
+
+## Ninth model attempt: SSA-HuBERT (2026-09-24) - collapsed
+
+`Orange/SSA-HuBERT-base-5k` - a genuinely different Africa-centric HuBERT
+pretrain from AfriHuBERT (not a variant of it), found via a literature
+search for other candidates.
+
+1. `ssahubert_attempt1_collapsed_to_a.log` - `--disfavor-blank-init`
+   enabled from the very first run (already known necessary from the
+   AfriHuBERT investigation). WER/CER frozen at 0.9705/0.9612 across all 3
+   epochs. Confirmed by direct inspection: every hypothesis is the single
+   character `'a'`, the exact same fallback failure mode AfriHuBERT only
+   reached *after* its blank-bias fix - reached immediately here instead.
+
+**Updated tally: 9 checkpoints tried, 2 work (XLS-R-300M, UniSpeech), 6
+collapse** (AfriHuBERT, MMS, w2v-BERT, data2vec-audio, XLSR-53,
+SSA-HuBERT). See `notes/pilot-ven-results.md` for why this closes the
+non-Whisper architecture search rather than motivating a tenth attempt.
+
+## Error propagation degradation study (Objectives 5/6, 2026-09-22)
+
+`error_propagation_degradation_study_afroxlmr.log` - 5-fold grouped
+CV, AfroXLM-RoBERTa, evaluated on text corrupted at WER 10/20/30/40/50%
+(mixed + substitution/deletion/insertion ablations) using the real
+full-scale Whisper error model. Clean baseline F1 0.546 (matches Objective
+4's originally reported 0.550 +/- 0.030). Insertion errors most harmful
+(F1 down to 0.389 by WER 50%), deletion least harmful (stays at
+0.516-0.550). See `notes/tshivenda-error-propagation.md` for the full
+write-up, real corrupted-text examples, and the practical reliability
+threshold this implies.

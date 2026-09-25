@@ -1,0 +1,65 @@
+model: results/whisper-twostage-merged/final | device: mps | sample per corpus: 200 | seed: 42
+Loading weights:   0%|          | 0/479 [00:00<?, ?it/s]Loading weights: 100%|██████████| 479/479 [00:00<00:00, 8522.51it/s]
+[transformers] Using custom `forced_decoder_ids` from the (generation) config. This is deprecated in favor of the `task` and `language` flags/config options.
+[transformers] Transcription using a multilingual Whisper will default to language detection followed by transcription instead of translation to English. This might be a breaking change for your use case. If you want to instead always translate your audio to English, make sure to pass `language='en'`. See https://github.com/huggingface/transformers/pull/28687 for more details.
+[transformers] A custom logits processor of type <class 'transformers.generation.logits_process.SuppressTokensLogitsProcessor'> has been passed to `.generate()`, but it was also created in `.generate()`, given its parameterization. The custom <class 'transformers.generation.logits_process.SuppressTokensLogitsProcessor'> will take precedence. Please check the docstring of <class 'transformers.generation.logits_process.SuppressTokensLogitsProcessor'> to see related `.generate()` flags.
+[transformers] A custom logits processor of type <class 'transformers.generation.logits_process.SuppressTokensAtBeginLogitsProcessor'> has been passed to `.generate()`, but it was also created in `.generate()`, given its parameterization. The custom <class 'transformers.generation.logits_process.SuppressTokensAtBeginLogitsProcessor'> will take precedence. Please check the docstring of <class 'transformers.generation.logits_process.SuppressTokensAtBeginLogitsProcessor'> to see related `.generate()` flags.
+[transformers] Ignoring clean_up_tokenization_spaces=True for BPE tokenizer WhisperTokenizer. The clean_up_tokenization post-processing step is designed for WordPiece tokenizers and is destructive for BPE (it strips spaces before punctuation). Set clean_up_tokenization_spaces=False to suppress this warning, or set clean_up_tokenization_spaces_for_bpe_even_though_it_will_corrupt_output=True to force cleanup anyway.
+  nchlt_test: 25/200 (0.3 clips/s)
+  nchlt_test: 50/200 (0.3 clips/s)
+  nchlt_test: 75/200 (0.2 clips/s)
+  nchlt_test: 100/200 (0.2 clips/s)
+  nchlt_test: 125/200 (0.2 clips/s)
+  nchlt_test: 150/200 (0.2 clips/s)
+  nchlt_test: 175/200 (0.2 clips/s)
+  nchlt_test: 200/200 (0.3 clips/s)
+  predictions saved -> results/preds_twostage/final_nchlt_test.csv
+
+== nchlt_test ==
+n=200  WER=1.989  CER=1.116  MER=0.791  WIL=0.888  WIP=0.112  empty predictions=0  (784s)
+  ref: i fanela u dzhiela nzhele
+  hyp: i fanela u dzhielandzhele
+
+  ref: na vhuḓifhinduleli kha vhashumi nahone
+  hyp: na vhudifhenduleli kha vhashuni na hone
+
+  ref: na u vhambedzea na dza
+  hyp: na u vhambedzea na dza
+
+  ref: ya u sumbedzwa tshirunzi na
+  hyp: ya u sumbedzwa tshirunzi na
+
+  ref: vhulimi zwine zwa khou bvelela
+  hyp: vhulimi zwine zwakho u bvelela
+
+  anv_dev_test: 25/200 (0.1 clips/s)
+  anv_dev_test: 50/200 (0.1 clips/s)
+  anv_dev_test: 75/200 (0.1 clips/s)
+  anv_dev_test: 100/200 (0.1 clips/s)
+  anv_dev_test: 125/200 (0.1 clips/s)
+  anv_dev_test: 150/200 (0.1 clips/s)
+  anv_dev_test: 175/200 (0.1 clips/s)
+  anv_dev_test: 200/200 (0.1 clips/s)
+  predictions saved -> results/preds_twostage/final_anv_dev_test.csv
+
+== anv_dev_test ==
+n=200  WER=0.853  CER=0.360  MER=0.821  WIL=0.940  WIP=0.060  empty predictions=0  (1750s)
+  ref: khombo ndi musi vhukonani ho no kalula ni wane khonani yaṋu iṅwe hanefho online a tshi vhoni humbela thuso ya masheleni ngauri hu ḓovha hu kale ni tshi davhidzana naye na humbula u sokou muthusa ngeno ni sa muḓivhi
+  hyp: khombo ndiṅusivhukonani honokalula ṋiwane khonani ya ṅwiṅwe hanefho online a tshivhoni humbelaṱhuso ya mashelini nga uri hudovha hukalini tshidavhidzana na humbuloswako muthusa ngenonisa mudivi
+
+  ref: ahuna khaelo na nthihi ine ya ṋetshedza tsireledzo yo fhelelaho tsireledzo ya percent
+  hyp: haṅahelo na nṱhiye ya ṅetshedzwa sireledzo yo fhelelaho sireledzo ya hundred percent
+
+  ref: ee nṋe ndi soko vhona unga vhaswa vha hune nda dzula hone vha funa zwiambaro zwa musalauno u fhira zwiambaro zwa sialala nga uri vha zwi zwiambaro zwa musalauno vha zwiambara ḓuvha na ḓuvha ngeno zwiambaro zwa sialala vha tshi to zwiambara tshiṅwe tshifhinga luthihi kana luvhili kha ṅwaha zwenezwo musi hu ḓuvha ḽa hone ḽa zwa sialala kana musi vha tshi khou ya mitshatoni
+  hyp: iṋedesukuvhuṋo nga vhaswa hune ndadzwaṅi vhafhuna zwiambarozwa misalahuṋovhira zwiambarozwa sialalga uri zwiambarozwa misalahuṋo vha zwiambaraḓuvhana zwiambarozwa sialala vhatshuduzwiambara tshavhushivhina vhuthi kana luvhili khaṅwa zwineswamosi vhuḓuvhalahoṋi ṱhwasialala kana musi vha tshukhuya mitshaṱoni
+
+  ref: u sa tsireledzea ha zwiḽiwa zwi tshi khou ṱuṱuwedzwa nga kiḽima zwi ita uri mutakalo wa tshitshavha u si vhe wavhuḓi nahone zwi ita uri vhathu vha sokou vha na malwadze lwadze nga nṱhani ha zwitzhili zwo fhambananaho
+  hyp: u ṱatsireledzea zwiliwa zwitshukhutuwe dzwangakilima zwitori mutakalo vhashitshavha u sivhewavhuḓi nahone zwitori vhathu vhasokuvha namalwadzilwadzinganṱhania zwitsheli zwufhambana naho
+
+  ref: nṋe ndi vhona unga maapuḽa dzi banana maswiri mapierre dzi nḓirivhe ndi magwavha ndi vhona unga ndi yone mitshelo ine ya thusa u fhaṱa maswole a muvhili wa muthu
+  hyp: ṅe ṅivhonṅga maapula dzibanana mashiri mapehere dzindirivhe magwavha nḓivhonongandione mitshelo ine yaṱhusa u fhatahmasoḽi a muvhili wamutu
+
+== summary ==
+corpus             n     WER     CER     MER     WIL     WIP
+nchlt_test       200   1.989   1.116   0.791   0.888   0.112
+anv_dev_test     200   0.853   0.360   0.821   0.940   0.060
