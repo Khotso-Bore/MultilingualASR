@@ -16,6 +16,7 @@ same sets throughout):
 | Wav2Vec2 XLS-R-300M, pilot + augmentation (5k clips) | 0.269 | 0.060 | - | - | "Objective 2" |
 | Whisper, pilot-scale (7.3k clips) | 0.182 | 0.048 | - | - | "Whisper pilot v2" |
 | Whisper, pilot + augmentation (5k clips) | 0.217 | 0.052 | 0.755 | 0.207 | "Objective 2" |
+| Whisper, matched-volume augmentation (20k->60k clips) | 0.187 | 0.047 | 0.296 | 0.090 | "Objective 2" follow-up |
 | Whisper, single-stage LoRA, same capacity (5k clips) | 0.384 | 0.095 | 0.854 | 0.258 | "Objective 3" |
 | Whisper, two-stage + LoRA (5k+5k clips) | 0.321 | 0.080 | 0.797 | 0.215 | "Objective 3" |
 | **Whisper, full-scale (60k clips) - the headline result** | **0.103** | **0.032** | **0.256** | **0.108** | "Whisper full-scale" |
@@ -453,10 +454,101 @@ matches the modest epoch-by-epoch WER trend for this run (0.240 -> 0.220 ->
 0.206) - small, steady refinement rather than a visible turning point, the
 opposite shape from the two-stage run's sharp Stage-1-to-Stage-2 jump.
 
-**Both augmentation comparisons are now complete**: it helps both models,
-more for the weaker one (Wav2Vec2) than the stronger one (Whisper) - a
-sensible, consistent finding across the two architectures, answering
-Sub-question 2 for this project.
+**Both augmentation comparisons are now complete (at pilot scale)**: it
+helps both models, more for the weaker one (Wav2Vec2) than the stronger one
+(Whisper) - a sensible, consistent finding across the two architectures.
+This answers Sub-question 2 at the 5k-clip scale both pilots ran at; the
+follow-up below asks the same question at a scale closer to the full
+dataset.
+
+### Follow-up run (2026-09-24/25): does augmentation substitute for real data at matched volume?
+
+The two comparisons above both add augmentation on *top of* a fixed small
+real-clip count (5k), so they show augmentation helps, but not whether it
+can stand in for data you don't have. Ran a different, larger-scale
+question instead: **20,000 real clips, speed-perturbed + SpecAugment to
+60,000 effective training examples per epoch - the same total volume as
+the full-scale Whisper run (Objective 1, 60,087 real clips, no
+augmentation, WER 0.103)** - to see whether 1/3 real data plus
+augmentation can match full real-data volume. Fresh `openai/whisper-small`,
+1 epoch, combined NCHLT+ANV pool, matching the full-scale run's epoch
+count so only the real-vs-augmented data mix differs.
+
+**A real bug surfaced and got fixed before this produced a valid result.**
+The first two launch attempts both died within seconds with no error
+output at all - just a Python multiprocessing "leaked semaphore" warning,
+no traceback. Diagnosed rather than guessed: an isolated foreground test
+of the exact same command survived fine, which ruled out the command
+itself; a follow-up test of the exact `nohup`/`caffeinate` wrapper in
+isolation also died the same way, which at first looked like the wrapper
+was the problem - but re-examining the actual code explained it better.
+The augmentation code built a Python list holding *every* decoded audio
+array for all 60,000 augmented examples in memory at once
+(`Dataset.from_list(expanded)`) before handing it to `datasets` - fine at
+5k->15k clips (the pilot scale above), but a large enough memory spike at
+20k->60k clips to trigger a silent OOM kill (no catchable exception, no
+traceback - consistent with everything observed). Fixed in both
+`pilot_finetune_whisper_mps_ven.py` and `pilot_finetune_wav2vec2_mps_ven.py`
+by switching to `Dataset.from_generator()`, which streams examples to
+Arrow-backed storage instead of holding them all in a Python list -
+smoke-tested clean on both scripts, then confirmed the real run actually
+survived past the point the old code used to die before letting it run
+the full ~12 hours unattended overnight.
+
+**Standardized comparison** (200-clip NCHLT test / ANV dev_test, seed 42):
+
+| Model | NCHLT WER | NCHLT CER | ANV WER | ANV CER |
+|---|---|---|---|---|
+| Whisper pilot v1, no augmentation (5k real clips) | 0.265 | 0.060 | - | - |
+| Whisper pilot + augmentation (5k real -> 15k effective) | 0.217 | 0.052 | 0.755 | 0.207 |
+| Whisper, **matched-volume: 20k real -> 60k effective** | 0.187 | 0.047 | 0.296 | 0.090 |
+| **Whisper full-scale: 60k real, no augmentation** | **0.103** | **0.032** | **0.256** | **0.108** |
+
+**Result: augmentation does not substitute for real data at matched
+volume, but it does help meaningfully as data scales up too.** The
+matched-volume run (0.187) is clearly worse than full-scale's real 60k
+clips (0.103) - real data remains better than an augmented stand-in for it
+at the same total training volume, the expected and sensible direction.
+But it also continues the trend from the pilot-scale results: more
+augmented volume keeps helping (0.265 -> 0.217 -> 0.187 as real+augmented
+volume grows), and at 20k real clips it already reaches a respectable
+50% exact-match rate on NCHLT (100/200), up from pilot-augmentation's
+38.5%. On ANV specifically, CER (0.090) is actually *better* than
+full-scale's own ANV CER (0.108), though WER is worse (0.296 vs 0.256) -
+a mixed, genuinely interesting result worth noting rather than
+over-interpreting from a single run.
+
+Real examples (`results/preds_augment_matched/final_nchlt_test.csv`, first
+20 of 200, not cherry-picked):
+
+| # | Reference | Hypothesis | Row WER |
+|---|---|---|---|
+| 1 | i fanela u dzhiela nzhele | i fanela u dzhiela nzhele *(exact)* | 0.00 |
+| 2 | na vhuḓifhinduleli kha vhashumi nahone | na vhuḓifhinduleli kha vhashumi nahone *(exact)* | 0.00 |
+| 3 | na u vhambedzea na dza | na u vhambedzea na dza *(exact)* | 0.00 |
+| 4 | ya u sumbedzwa tshirunzi na | ya u sumbedzwa tshirunzi na *(exact)* | 0.00 |
+| 5 | vhulimi zwine zwa khou bvelela | vhulimi zwine zwa khou bvelela *(exact)* | 0.00 |
+| 6 | havhudi vhune ha sa tou | ha vhuḓi vhune ha sa tou | 0.40 |
+| 7 | tsha kale musi vhasidzana vha | tshakale musi vha sedzana vha | **0.80** |
+| 8 | humiselwa kha muiti wa khumbelo | humiselwa kha muiti wa khumbelo *(exact)* | 0.00 |
+| 9 | oweleaho wa matombo a linton | owelaho wa matombo a lintoni | 0.40 |
+| 10 | zwa wela fhasi hadzo kha | zwawe la fhasi hadzo kha | 0.40 |
+| 11 | wa tshelede ya u unḓa | wa tshelede ya u | 0.20 |
+| 12 | na mugudisi wa u bambela | na mugudisi wa u bambela *(exact)* | 0.00 |
+| 13 | lwone holu lwanga lu a | lwone holu lwa nga lwa | 0.60 |
+| 14 | kona u ṅwala na u | kona u ṅwala na u *(exact)* | 0.00 |
+| 15 | tambudzwa ndi nga u sedzulusa | tambudzwa ndi nga u sedzulusa *(exact)* | 0.00 |
+| 16 | na vhuhole kana u thogomelwa | na vhuhole kana vhuṱhogomelwaho | 0.40 |
+| 17 | u rekhoda kha redzhisitara ya | u rekhoda kha redzhisitara ya *(exact)* | 0.00 |
+| 18 | nekedza tshumelo kha vhaaluwa ho | nekedza tshumelo kha vhaaluwa ho *(exact)* | 0.00 |
+| 19 | a nga dzhia tsheo ya | a nga dzhia tsheo ya *(exact)* | 0.00 |
+| 20 | lushaka hune ha vhonala na | lushaka hune ha vhonala na u | 0.20 |
+
+Noticeably fewer word-merge artifacts than the pilot-scale augmented run
+(row 9 here is a single-letter slip, "linton"->"lintoni", not the
+multi-word merges seen at 5k-clip scale) - more real data appears to help
+Whisper's decoding cleanliness specifically, independent of the WER
+headline number.
 
 ## Objective 3: two-stage fine-tuning + LoRA (Sub-question 3)
 
