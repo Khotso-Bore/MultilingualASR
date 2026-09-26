@@ -113,6 +113,21 @@ AfroXLM-RoBERTa is the strongest available model for Tshivenda NLP tasks
 specifically because plain XLM-R's pretraining underrepresents the language.
 A genuinely useful, literature-consistent result for the report.
 
+### Confidence check: 2 more seeds
+
+The result above is one seed (42). Ran AfroXLM-RoBERTa again at seed 7 and
+seed 123, same config, to check it wasn't a lucky split.
+
+| Seed | Accuracy | Macro F1 |
+|---|---|---|
+| 42 (reported above) | 0.562 +/- 0.030 | 0.550 +/- 0.030 |
+| 7 | 0.592 +/- 0.047 | 0.559 +/- 0.074 |
+| 123 | 0.575 +/- 0.075 | 0.563 +/- 0.084 |
+
+Mean across the 3 seeds: accuracy 0.576, macro F1 0.557. The spread between
+seeds is small (about 1.2 points on accuracy, 0.5 points on F1), so 56% is
+a stable number, not a one-off. No errors on either run.
+
 ### Training progression: when did each model start (not) learning
 
 No per-epoch model checkpoints survive from these runs to generate
