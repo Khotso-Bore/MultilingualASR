@@ -18,7 +18,8 @@ same sets throughout):
 | Whisper, pilot + augmentation (5k clips) | 0.217 | 0.052 | 0.755 | 0.207 | "Objective 2" |
 | Whisper, matched-volume augmentation (20k->60k clips) | 0.187 | 0.047 | 0.296 | 0.090 | "Objective 2" follow-up |
 | Whisper, single-stage LoRA, same capacity (5k clips) | 0.384 | 0.095 | 0.854 | 0.258 | "Objective 3" |
-| Whisper, two-stage + LoRA (5k+5k clips) | 0.321 | 0.080 | 0.797 | 0.215 | "Objective 3" |
+| Whisper, two-stage + LoRA, rank 8 (5k+5k clips) | 0.321 | 0.080 | 0.797 | 0.215 | "Objective 3" |
+| Whisper, two-stage + LoRA, rank 16 (5k+5k clips) | 0.295 | 0.071 | 0.840 | 0.290 | "Objective 3" Run 3 |
 | **Whisper, full-scale (60k clips) - the headline result** | **0.103** | **0.032** | **0.256** | **0.108** | "Whisper full-scale" |
 | Wav2Vec2 XLS-R-300M, full-scale (60k clips) | 0.252 | 0.056 | 0.457 | 0.106 | "Wav2Vec2 XLS-R-300M full-scale" |
 
@@ -816,6 +817,65 @@ different things to the same sentences. Note clip 1's "dzielandzhele"
 word-merge survives all four checkpoints - the specific word-boundary
 weakness flagged above isn't something either stage fixes.
 
+### Run 3 (2026-09-27): does a higher LoRA rank close the gap further?
+
+Run 2 flagged the word-boundary-merge pattern as a likely rank-8 capacity
+limit. Reran the full two-stage pipeline at rank 16 (alpha 32, same 2:1
+ratio as before), same 5k combined clips for Stage 1 and 5k NCHLT clips for
+Stage 2, same learning rate.
+
+Training-time eval improved at every single epoch compared to rank 8, in
+both stages. Stage 1 final epoch: 0.465 (was 0.517). Stage 2 final epoch:
+0.311 (was 0.360).
+
+**Standardized comparison**:
+
+| Model | NCHLT WER | NCHLT CER | ANV WER | ANV CER |
+|---|---|---|---|---|
+| Two-stage LoRA, rank 8 | 0.321 | 0.080 | 0.797 | 0.215 |
+| Two-stage LoRA, rank 16 | 0.295 | 0.071 | 0.840 | 0.290 |
+
+**A real trade-off, not a clean win.** NCHLT improves (0.321 to 0.295, an
+8% relative reduction, exact-match rate up from 49/200 to 59/200). ANV gets
+worse (0.797 to 0.840). Rank 16 has more capacity to specialize on
+NCHLT-only Stage 2 data, and that specialization seems to come partly at
+the cost of what Stage 1 learned about ANV. This is a real result worth
+reporting as-is rather than picking whichever number looks better.
+
+Real examples (`results/preds_lora_r16/final_nchlt_test.csv`, first 20 of
+200, not cherry-picked):
+
+| # | Reference | Hypothesis | Row WER |
+|---|---|---|---|
+| 1 | i fanela u dzhiela nzhele | i fanela u dzhielanzhela | 0.40 |
+| 2 | na vhuḓifhinduleli kha vhashumi nahone | na vhudifheduleli kha vhashunwe nahone | 0.40 |
+| 3 | na u vhambedzea na dza | na u vhambedzea na dza *(exact)* | 0.00 |
+| 4 | ya u sumbedzwa tshirunzi na | ya u sumbedzwa tshirunzi na *(exact)* | 0.00 |
+| 5 | vhulimi zwine zwa khou bvelela | vhulimi zwine zwa khou bvelela *(exact)* | 0.00 |
+| 6 | havhudi vhune ha sa tou | ha vhudi vhune ha sa tou | 0.40 |
+| 7 | tsha kale musi vhasidzana vha | tshakale musi vha si dzana vha | **1.00** |
+| 8 | humiselwa kha muiti wa khumbelo | ho miselwa kha muiti wa khumbelo | 0.40 |
+| 9 | oweleaho wa matombo a linton | owelaho wa matombo a ḽi ṱoni | 0.60 |
+| 10 | zwa wela fhasi hadzo kha | zwauela fhasihadzo kha | 0.80 |
+| 11 | wa tshelede ya u unḓa | wa tshelede ya u | 0.20 |
+| 12 | na mugudisi wa u bambela | na mugudisi wa u bambela *(exact)* | 0.00 |
+| 13 | lwone holu lwanga lu a | lone ho lulwa nga luwa | **1.00** |
+| 14 | kona u ṅwala na u | kona u ṅwala na u *(exact)* | 0.00 |
+| 15 | tambudzwa ndi nga u sedzulusa | tambudzwa ndi nga u sedzulusa *(exact)* | 0.00 |
+| 16 | na vhuhole kana u thogomelwa | na vhuhole kana vhogomelwaho | 0.40 |
+| 17 | u rekhoda kha redzhisitara ya | u rikhoda kha redzhi sitara ya | 0.60 |
+| 18 | nekedza tshumelo kha vhaaluwa ho | nekedza tshumelo kha vhaaluwa ho *(exact)* | 0.00 |
+| 19 | a nga dzhia tsheo ya | a nga dzhia tsheo ya *(exact)* | 0.00 |
+| 20 | lushaka hune ha vhonala na | hulushaka hune ha vhonala na | 0.20 |
+
+The word-boundary-merge pattern from Run 2 (row 1, "dzhiela nzhele" to
+"dzhielanzhela") still shows up here at rank 16. So that specific pattern
+isn't purely a rank-8 capacity limit either. It's a real, harder question
+than "just raise the rank" answers cleanly. Rank 32 wasn't tried. Rank 16
+already gives a clear enough answer: more capacity trades NCHLT gains for
+ANV losses, so picking a rank is a real design decision, not a strictly
+better/worse choice.
+
 ### Caveats
 
 - Pilot scale only (5k clips per stage) - not full-scale, so absolute
@@ -825,12 +885,9 @@ weakness flagged above isn't something either stage fixes.
   LoRA-vs-full-fine-tune, as explained above - a same-capacity comparison
   (single-stage with LoRA) would be needed to isolate the staging effect
   cleanly.
-- Only one LoRA rank (8) was tried. Per Seani's model-selection guidance -
-  this is a candidate that showed a real, partial positive signal (the ANV
-  retention result) but didn't clearly beat the existing best, so it's
-  documented honestly rather than presented as a win; a higher-rank rerun
-  would be the natural next experiment if this gets revisited, not treated
-  as a dead end.
+- Two LoRA ranks tried (8 and 16, see Run 3 above) - rank 16 helps NCHLT
+  and hurts ANV, so rank itself is a real trade-off, not a solved question.
+  Rank 32 wasn't tried.
 
 ## Whisper pilot v2 (rescoped) - best pilot-scale result
 
