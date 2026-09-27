@@ -145,9 +145,12 @@ aggregate F1 curve.
   Setswana and Sepedi results from the rest of the team - this track only
   answers it for Tshivenda, and can't complete it alone.
 - **XEUS** (ESPnet) - the one architecture candidate with *confirmed*
-  native Tshivenda coverage - was identified but never attempted, due to
-  integration cost (non-mainline fork, CUDA required, no path to the
-  cheap local-pilot-first check used everywhere else). Logged as a
+  native Tshivenda coverage - was identified but never attempted. Not
+  actually a hardware blocker on closer look (it runs on CPU/MPS fine) -
+  the real cost is that it has no ready CTC fine-tuning wrapper like every
+  other model tried here, so using it means building a whole custom
+  training pipeline against its raw feature-extraction API from scratch.
+  Logged as a
   deliberate no, not a failure.
 - **A same-capacity LoRA rank sweep** (16/32, not just 8) - the two-stage
   LoRA result showed a word-boundary-merge artifact that looks like a

@@ -116,7 +116,11 @@ A genuinely useful, literature-consistent result for the report.
 ### Confidence check: 2 more seeds
 
 The result above is one seed (42). Ran AfroXLM-RoBERTa again at seed 7 and
-seed 123, same config, to check it wasn't a lucky split.
+seed 123, same config (`--freeze-base --learning-rate 1e-3 --epochs 15`,
+5-fold grouped CV), to check it wasn't a lucky split. No errors on either
+run.
+
+**Summary across all 3 seeds:**
 
 | Seed | Accuracy | Macro F1 |
 |---|---|---|
@@ -125,8 +129,46 @@ seed 123, same config, to check it wasn't a lucky split.
 | 123 | 0.575 +/- 0.075 | 0.563 +/- 0.084 |
 
 Mean across the 3 seeds: accuracy 0.576, macro F1 0.557. The spread between
-seeds is small (about 1.2 points on accuracy, 0.5 points on F1), so 56% is
-a stable number, not a one-off. No errors on either run.
+seeds is small, about 1.2 points on accuracy and 0.5 points on F1, so 56%
+is a stable number, not a one-off.
+
+**Every fold, every seed** (`results/logs/classifier_seed7_confirms_seed42.log`,
+`classifier_seed123_confirms_seed42.log`):
+
+| Fold | Seed 42 acc / F1 | Seed 7 acc / F1 | Seed 123 acc / F1 |
+|---|---|---|---|
+| 1 | 0.597 / 0.597 | 0.653 / 0.647 | 0.556 / 0.550 |
+| 2 | 0.542 / 0.531 | 0.611 / 0.596 | 0.528 / 0.526 |
+| 3 | 0.569 / 0.555 | 0.514 / 0.447 | 0.556 / 0.547 |
+| 4 | 0.514 / 0.509 | 0.569 / 0.499 | **0.722 / 0.721** |
+| 5 | 0.586 / 0.560 | 0.614 / 0.608 | 0.514 / 0.471 |
+
+No fold in any seed drops to chance the way XLM-RoBERTa's folds do (see
+above), and no fold sits far above the rest either, except seed 123's fold
+4 (0.722), which is still well inside "beats chance," not an outlier that
+inflates the average.
+
+**When does each seed actually start learning?** Fold 1's per-epoch metrics
+for all three seeds, since that's where "when" varies most:
+
+| Epoch | Seed 42 | Seed 7 | Seed 123 |
+|---|---|---|---|
+| 1 | 0.500 (chance) | 0.514 | 0.500 (chance) |
+| 2 | **0.597** (peak, kept) | 0.500 | **0.556** (peak, kept) |
+| 3 | 0.528 | 0.556 | 0.500 |
+| 4 | 0.569 | **0.653** (peak, kept) | 0.500 |
+| 5 | 0.556 (stop) | 0.500 | 0.542 (stop) |
+| 6 | - | 0.556 | - |
+| 7 | - | 0.514 (stop) | - |
+
+Seed 7's fold 1 doesn't find its peak until epoch 4, two epochs later than
+seed 42 and seed 123. Same overall pattern either way - a jump to real
+signal, some noisy fluctuation around it, then early stopping picks the
+best epoch rather than the last one - just at a different point in
+training depending on the random split and initialization. This is why
+`load_best_model_at_end` matters here specifically: without it, a run that
+happens to end mid-fluctuation would report a worse number than the model
+actually reached.
 
 ### Training progression: when did each model start (not) learning
 

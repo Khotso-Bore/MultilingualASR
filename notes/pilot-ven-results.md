@@ -876,6 +876,29 @@ already gives a clear enough answer: more capacity trades NCHLT gains for
 ANV losses, so picking a rank is a real design decision, not a strictly
 better/worse choice.
 
+**Training progression at rank 16, same 5 clips as the rank-8 table
+above:**
+
+| Clip | Reference | Stage 1, ep 2 | Stage 1, ep 3 | Stage 2, ep 2 | Stage 2, ep 3 (final) |
+|---|---|---|---|---|---|
+| 1 | i fanela u dzhiela nzhele | i fane u dzielandzhele | i fane u dzielandzhele | i fanela u dzhielanzhela | i fanela u dzhielanzhela |
+| 2 | na vhuḓifhinduleli kha vhashumi nahone | na vhudifhenduleli kha vhashvhumi na hone | na vhu ḓifhinduleli kha vhashvumi nahone | na vhuḓifhinduleli kha vhashumi nahone *(exact)* | na vhuifheduleli kha vhashuni nahone |
+| 3 | na u vhambedzea na dza | na vha mbedzea na dza | na vha mbedzea na dza | na vhambedzea na dza | na vhambedzea na dza |
+| 4 | ya u sumbedzwa tshirunzi na | ya u sumbedzwa tshirundzi na | ya u sumbedzwa tshirundzi na | ya u sumbedzwa tshirunzi na *(exact)* | ya u sumbedzwa tshirunzi na *(exact)* |
+| 5 | vhulimi zwine zwa khou bvelela | vhulimi zwine zwa khou bvelela *(exact)* | vhulimi zwi ne zwa khou bvelela | vhulimi zwine zwa khou bvelela *(exact)* | vhulimi zwine zwa khou bvelela *(exact)* |
+
+Same overall shape as rank 8: Stage 1 barely moves between its own epoch 2
+and 3, Stage 2 is where the real jump happens. But look at clip 2 closely -
+it's an **exact match at Stage 2 epoch 2**, then gets *worse* at the final
+epoch ("vhashumi" becomes the wrong "vhashuni", a diacritic gets dropped
+from "vhuḓifhinduleli"). `load_best_model_at_end` picks the checkpoint
+with the best *corpus-wide* WER, not the best result on any single clip,
+so a individual clip regressing while the aggregate number improves is
+expected, not a sign of a broken run - the same thing happened in the
+Wav2Vec2 augmentation progression table earlier in this file. It's a
+useful reminder every time it shows up: a handful of example clips is a
+sample, never the whole story.
+
 ### Caveats
 
 - Pilot scale only (5k clips per stage) - not full-scale, so absolute
@@ -1087,6 +1110,29 @@ that caught real mistakes twice already in this project (e.g. Whisper v2's
 51-hour scoping issue). Given the timeline, decided not to pursue it -
 same treatment as AfriHuBERT: identified, evaluated, documented as a
 deliberate no rather than an open thread.
+
+**Re-checked 2026-09-27, correcting the record above.** "States CUDA as a
+prerequisite" overstated it. XEUS's actual HuggingFace model card
+(`espnet/xeus`) shows the base usage path picks CPU automatically when no
+CUDA device is available (`device = "cuda" if torch.cuda.is_available()
+else "cpu"`), and Flash Attention (the part that genuinely needs CUDA) is
+explicitly optional, not required. So a plain CPU/MPS run of the encoder
+itself is not blocked by hardware the way this was originally written up.
+
+The real blocker is different and, on reflection, bigger than a hardware
+requirement: every other model in this search (all 9) loads through
+`transformers`' `AutoModelForCTC` or `WhisperForConditionalGeneration`, so
+swapping in a new checkpoint was a one-line change plus a `--model` flag.
+XEUS has no such ready-made CTC wrapper - its own usage example only shows
+`xeus_model.encode(...)` returning raw encoder features, with no CTC head,
+tokenizer integration, or training loop provided anywhere. Using it here
+would mean building a bespoke fine-tuning pipeline against the raw
+`espnet2.tasks.ssl.SSLTask` API from scratch: a real CTC head on top of
+those features, wiring in the existing `tokenizers/ven/` tokenizer, and a
+training loop that doesn't reuse any of `pilot_finetune_*_mps_ven.py`'s
+shared structure. That's a genuinely different scope of work than the
+other 9 attempts, not a bigger version of the same task - still not
+attempted, but now for the accurate reason.
 
 **Status after MMS/XEUS: 2 working (Wav2Vec2, Whisper), 2 ruled out with
 evidence (AfriHuBERT, MMS - both fail identically via total CTC blank
