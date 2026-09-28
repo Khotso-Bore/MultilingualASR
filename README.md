@@ -44,6 +44,9 @@ src/                          # reusable pipeline code, grouped by stage
   error_propagation/             # controlled-WER transcript corruption + the degradation study (§4.6, Objectives 5/6)
     corrupt_transcripts_ven.py         # the corruption engine + measured error-model support
     run_degradation_study_ven.py       # runs the classifier across WER levels, produces the WER-vs-F1 curve
+  demo/                           # the actual audio-in, verdict-out pipeline, ASR checkpoint chained into the classifier
+    asr_to_classifier_pipeline_ven.py  # one real clip in, one verdict out
+    run_pipeline_batch_ven.py          # same two models loaded once, run over many real clips, resumable
 
 notebooks/                    # thin wrappers around src/ for local iteration, plus Colab bootstrap notebooks
   notebook.ipynb                 # pre-language-split streaming-sample EDA
@@ -59,6 +62,7 @@ notes/                         # narrative write-ups of what was tried and why -
   whisper-full-scale-run-log.md   # live progress log kept during the Whisper/Wav2Vec2 full-scale training runs
   tshivenda-classifier-proxy.md   # misinformation-classifier proxy dataset rationale + results (Objective 4)
   tshivenda-error-propagation.md  # WER-vs-classification-accuracy study (Objectives 5/6)
+  tshivenda-demo-pipeline.md      # the real audio-to-verdict pipeline, run at 1,000-clip volume
 
 results/
   logs/                          # tracked: raw output from every training run (success, failure, or abort)

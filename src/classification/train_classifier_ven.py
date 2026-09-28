@@ -29,7 +29,7 @@ import numpy as np
 import torch
 from datasets import Dataset
 from sklearn.metrics import accuracy_score, f1_score
-from sklearn.model_selection import GroupKFold
+from sklearn.model_selection import GroupKFold, GroupShuffleSplit
 from transformers import (
     AutoModelForSequenceClassification,
     AutoTokenizer,
@@ -137,6 +137,82 @@ def cross_validate(model_name, folds, epochs, batch_size, seed, learning_rate=2e
     return accs, f1s
 
 
+def train_and_save(model_name, epochs, batch_size, seed, learning_rate, freeze_base, save_dir):
+    """Train once on a 90/10 grouped split and save a deployable checkpoint.
+
+    cross_validate() above answers Objective 4 (a reliable accuracy/F1
+    estimate) - none of its fold checkpoints are meant to survive, each fold
+    reuses the same tmp output_dir and gets overwritten by the next one. This
+    is for when an actual saved model is needed for inference (see
+    src/demo/), not another accuracy estimate.
+    """
+    rows = load_rows(DATA_CSV)
+    groups = [r["source_id"] for r in rows]
+    labels = [r["label"] for r in rows]
+
+    gss = GroupShuffleSplit(n_splits=1, test_size=0.15, random_state=seed)
+    train_idx, eval_idx = next(gss.split(rows, labels, groups))
+    train_rows = [rows[j] for j in train_idx]
+    eval_rows = [rows[j] for j in eval_idx]
+    assert not (set(groups[j] for j in train_idx) & set(groups[j] for j in eval_idx)), \
+        "source_id leaked across train/eval"
+
+    tokenizer = AutoTokenizer.from_pretrained(model_name)
+    model = AutoModelForSequenceClassification.from_pretrained(
+        model_name, num_labels=2, attn_implementation="eager")
+    if freeze_base:
+        base = getattr(model, model.base_model_prefix)
+        for p in base.parameters():
+            p.requires_grad = False
+
+    def tokenize(batch):
+        return tokenizer(batch["text"], truncation=True, max_length=512, padding="max_length")
+
+    train_ds = Dataset.from_list(train_rows).map(tokenize, batched=True)
+    eval_ds = Dataset.from_list(eval_rows).map(tokenize, batched=True)
+
+    def compute_metrics(pred):
+        preds = np.argmax(pred.predictions, axis=-1)
+        return {"accuracy": accuracy_score(pred.label_ids, preds),
+                "macro_f1": f1_score(pred.label_ids, preds, average="macro")}
+
+    device = "mps" if torch.backends.mps.is_available() else ("cuda" if torch.cuda.is_available() else "cpu")
+    args = TrainingArguments(
+        output_dir=str(RESULTS_DIR / "tmp_final"),
+        per_device_train_batch_size=batch_size,
+        per_device_eval_batch_size=batch_size,
+        eval_strategy="epoch",
+        save_strategy="epoch",
+        save_total_limit=1,
+        load_best_model_at_end=True,
+        metric_for_best_model="macro_f1",
+        greater_is_better=True,
+        logging_steps=10,
+        learning_rate=learning_rate,
+        warmup_ratio=0.1,
+        num_train_epochs=epochs,
+        seed=seed,
+        use_cpu=(device == "cpu"),
+        report_to=[],
+    )
+    from transformers import EarlyStoppingCallback
+    trainer = Trainer(model=model, args=args, train_dataset=train_ds, eval_dataset=eval_ds,
+                      compute_metrics=compute_metrics,
+                      callbacks=[EarlyStoppingCallback(early_stopping_patience=3)])
+    trainer.train()
+    metrics = trainer.evaluate()
+    print(f"held-out (15% grouped split, n={len(eval_rows)}): "
+          f"accuracy={metrics['eval_accuracy']:.3f} macro_f1={metrics['eval_macro_f1']:.3f}")
+    print("(this single held-out split is a sanity check the saved checkpoint isn't broken, "
+          "not a replacement for the 5-fold CV estimate above)")
+
+    save_path = Path(save_dir)
+    save_path.mkdir(parents=True, exist_ok=True)
+    trainer.save_model(str(save_path))
+    tokenizer.save_pretrained(str(save_path))
+    print(f"saved deployable checkpoint to {save_path}")
+
+
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--model", default="Davlan/afro-xlmr-base")
@@ -147,7 +223,14 @@ if __name__ == "__main__":
     parser.add_argument("--learning-rate", type=float, default=2e-5)
     parser.add_argument("--freeze-base", action="store_true",
                         help="linear-probe: freeze the encoder, train only the classification head")
+    parser.add_argument("--save-final", metavar="DIR",
+                        help="skip cross-validation, train once on a 90/10 grouped split and "
+                             "save a deployable checkpoint to this directory")
     args = parser.parse_args()
 
-    cross_validate(args.model, args.folds, args.epochs, args.batch_size, args.seed, args.learning_rate,
-                   args.freeze_base)
+    if args.save_final:
+        train_and_save(args.model, args.epochs, args.batch_size, args.seed, args.learning_rate,
+                       args.freeze_base, args.save_final)
+    else:
+        cross_validate(args.model, args.folds, args.epochs, args.batch_size, args.seed, args.learning_rate,
+                       args.freeze_base)

@@ -28,6 +28,19 @@ narrowly (ANV) sit inside.
 This is a complete, evidenced answer for Tshivenda. It is not an answer for
 Setswana or Sepedi - see "What's still open" below.
 
+**Does an actual pipeline exist, audio in, verdict out?** Yes, as of this
+section - `src/demo/`. Real audio flows through the fine-tuned Whisper
+checkpoint, the transcript flows into the misinformation classifier, and a
+real verdict with a confidence score comes out. Run at real volume (1,000
+real clips, not one curated example): see `notes/tshivenda-demo-pipeline.md`
+for the full writeup, including a real robustness finding (occasional
+runaway/repetition-loop generation on longer clips) that a small fixed
+evaluation set had never surfaced. One honest limit stays true throughout:
+there is no audio of the actual real/fake misinformation content the
+classifier was trained on, so a verdict on a transcribed speech clip is real
+but has no ground truth to score it against - the 0.562 accuracy number
+still comes only from the text-only proxy dataset.
+
 ## Sub-question 1: baseline WER/CER for fine-tuned Wav2Vec2 and Whisper
 
 **Answer**: Whisper is the clearly stronger architecture. Full-scale

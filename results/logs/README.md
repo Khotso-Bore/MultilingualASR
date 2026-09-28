@@ -1,6 +1,6 @@
 # Run Logs
 
-**Run count so far: 35 total training runs** (6 classifier + 1 error-propagation
+**Run count so far: 37 total training/pipeline runs** (6 classifier + 1 error-propagation
 degradation study, 2 Wav2Vec2 pilots + 1 Wav2Vec2 full-scale + 1 Wav2Vec2
 augmentation pilot, 6 AfriHuBERT attempts, 3 pilot-scale Whisper runs (v1
 done, an aborted v2 attempt, a rescoped v2 done) + 1 Whisper full-scale +
@@ -8,7 +8,8 @@ done, an aborted v2 attempt, a rescoped v2 done) + 1 Whisper full-scale +
 follow-up, 2 MMS attempts, 1 w2v-BERT attempt, 1 data2vec-audio attempt,
 1 UniSpeech attempt, 2 XLSR-53 attempts, 1 SSA-HuBERT attempt, 3 two-stage
 LoRA runs (Stage 1 bad-LR + Stage 1 fixed-LR + Stage 2) + 1 same-capacity
-LoRA control). Updated as each new run finishes; every run (success,
+LoRA control, 1 final-checkpoint classifier save + 1 real-audio demo
+pipeline batch run). Updated as each new run finishes; every run (success,
 failure, or abort) gets one entry here.
 
 **A note on where later logs live**: runs from Objective 1's full-scale
@@ -391,3 +392,18 @@ full-scale Whisper error model. Clean baseline F1 0.546 (matches Objective
 0.516-0.550). See `notes/tshivenda-error-propagation.md` for the full
 write-up, real corrupted-text examples, and the practical reliability
 threshold this implies.
+
+## Demo pipeline: real audio through both models (2026-09-28)
+
+`classifier_final_checkpoint_train.log` - trains and saves the first
+deployable classifier checkpoint (`results/classifier/final`); 5-fold CV
+never kept one, each fold overwrote the same temp directory. Single 90/10
+grouped held-out split: accuracy 0.648, macro F1 0.642 (n=54).
+
+`demo_pipeline_batch_1000clips.log` - 1,000 real NCHLT/ANV clips run through
+the full audio-to-verdict pipeline (`src/demo/run_pipeline_batch_ven.py`),
+one clip at a time through a live pipeline rather than a batched eval.
+Surfaced a real robustness finding: 1.6% of the ANV sample triggered
+runaway/repetition-loop generation, visible in this log as the processing
+rate dropping from ~0.36 to ~0.12 clips/second partway through. See
+`notes/tshivenda-demo-pipeline.md` for the full write-up.
