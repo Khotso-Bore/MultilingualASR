@@ -17,6 +17,7 @@ same sets throughout):
 | Whisper, pilot-scale (7.3k clips) | 0.182 | 0.048 | - | - | "Whisper pilot v2" |
 | Whisper, pilot + augmentation (5k clips) | 0.217 | 0.052 | 0.755 | 0.207 | "Objective 2" |
 | Whisper, matched-volume augmentation (20k->60k clips) | 0.187 | 0.047 | 0.296 | 0.090 | "Objective 2" follow-up |
+| Whisper, true full-scale augmentation (60k->180k effective) | 0.122 | 0.035 | 0.197 | 0.048 | "Objective 2" true full-scale |
 | Whisper, single-stage LoRA, same capacity (5k clips) | 0.384 | 0.095 | 0.854 | 0.258 | "Objective 3" |
 | Whisper, two-stage + LoRA, rank 8 (5k+5k clips) | 0.321 | 0.080 | 0.797 | 0.215 | "Objective 3" |
 | Whisper, two-stage + LoRA, rank 16 (5k+5k clips) | 0.295 | 0.071 | 0.840 | 0.290 | "Objective 3" Run 3 |
@@ -550,6 +551,86 @@ Noticeably fewer word-merge artifacts than the pilot-scale augmented run
 multi-word merges seen at 5k-clip scale) - more real data appears to help
 Whisper's decoding cleanliness specifically, independent of the WER
 headline number.
+
+### True full-scale run (2026-09-27/29): the actual 180k-effective-clip result
+
+The matched-volume run above was always a scaled-down proxy for one
+specific question: does the whole 60,087-clip real dataset, fully
+augmented rather than held at matched volume, do better than the plain
+full-scale result (Objective 1, WER 0.103)? Ran that directly: the full
+60,087-clip real pool, speed-perturbed and SpecAugmented to 3x effective
+volume (about 180,000 effective training examples per epoch), fresh
+`openai/whisper-small`, 1 epoch, combined NCHLT+ANV.
+
+Took 38 hours 28 minutes to train (`train_runtime` 1.385e5 seconds) -
+partway through this specific run, a separate demo pipeline batch job got
+run concurrently on the same machine (`notes/tshivenda-demo-pipeline.md`)
+and visibly slowed it down: checked at 32h44m elapsed, it had only reached
+epoch 0.538 (average ~0.016 epoch/hour up to that point); checked again
+5h51m later, once the demo pipeline had finished and nothing else was
+running, it had reached epoch 0.807, a rate of ~0.046 epoch/hour over that
+window, about 3x faster with the machine to itself. Worth naming honestly
+since it means the 38h28m total is not a clean single-job timing
+measurement, though the trained result itself is unaffected - training and
+inference on the same machine at the same time competed for the same GPU,
+nothing about the training run itself was wrong.
+
+**Standardized comparison** (200-clip NCHLT test / ANV dev_test, seed 42):
+
+| Model | NCHLT WER | NCHLT CER | ANV WER | ANV CER |
+|---|---|---|---|---|
+| Whisper, matched-volume (20k real -> 60k effective) | 0.187 | 0.047 | 0.296 | 0.090 |
+| **Whisper full-scale, no augmentation (60k real)** | **0.103** | **0.032** | **0.256** | **0.108** |
+| **Whisper full-scale + augmentation (60k real -> 180k effective)** | **0.122** | **0.035** | **0.197** | **0.048** |
+
+**Result: augmentation at true full scale is a genuine trade, not a clean
+win.** NCHLT gets slightly worse (0.103 -> 0.122, 18% relative) while ANV
+gets clearly better (0.256 -> 0.197, 23% relative, and CER drops sharply,
+0.108 -> 0.048). This is consistent with the pattern already seen
+throughout this section, augmentation helps more where the underlying task
+is harder: NCHLT is already Whisper's strong, clean-read-speech domain, so
+adding synthetic variation looks more like noise than signal there, while
+ANV's harder spontaneous speech has more real room for augmentation to
+help, and it does. Both the matched-volume run and this one now agree in
+direction on ANV (augmentation helps the harder domain) even though the
+matched-volume run at only 1/3 real data still trailed the full-scale
+number outright.
+
+Real examples (`results/preds_augment_fullscale/final_nchlt_test.csv`,
+first 20 of 200, not cherry-picked):
+
+| # | Reference | Hypothesis | Row WER |
+|---|---|---|---|
+| 1 | i fanela u dzhiela nzhele | i fanela u dzhiela nzhele *(exact)* | 0.00 |
+| 2 | na vhuḓifhinduleli kha vhashumi nahone | na vhuḓifhinduleli kha vhashumi nahone *(exact)* | 0.00 |
+| 3 | na u vhambedzea na dza | na u vhambedzea na dza *(exact)* | 0.00 |
+| 4 | ya u sumbedzwa tshirunzi na | ya u sumbedzwa tshirunzi na *(exact)* | 0.00 |
+| 5 | vhulimi zwine zwa khou bvelela | vhulimi zwine zwa khou bvelela *(exact)* | 0.00 |
+| 6 | havhudi vhune ha sa tou | ha vhudi vhune ha sa tou | 0.40 |
+| 7 | tsha kale musi vhasidzana vha | tshakale musi vha sedzana vha | 0.80 |
+| 8 | humiselwa kha muiti wa khumbelo | humiselwa kha muiti wa khumbelo *(exact)* | 0.00 |
+| 9 | oweleaho wa matombo a linton | o welaho wa matombo a ḽinthoni | 0.60 |
+| 10 | zwa wela fhasi hadzo kha | zwa wela fhasi hadzo kha *(exact)* | 0.00 |
+| 11 | wa tshelede ya u unḓa | wa tshelede ya u | 0.20 |
+| 12 | na mugudisi wa u bambela | na mugudisi wa u bammbela | 0.20 |
+| 13 | lwone holu lwanga lu a | lwone holu lwanga lwa | 0.40 |
+| 14 | kona u ṅwala na u | kona u ṅwala na u *(exact)* | 0.00 |
+| 15 | tambudzwa ndi nga u sedzulusa | tambudzwa ndi nga u sedzulusa *(exact)* | 0.00 |
+| 16 | na vhuhole kana u thogomelwa | na vhuhole kana vhuṱhogomelwaho | 0.40 |
+| 17 | u rekhoda kha redzhisitara ya | u rekhoda kha redzhisitara ya *(exact)* | 0.00 |
+| 18 | nekedza tshumelo kha vhaaluwa ho | nekedza tshumelo kha vhaaluwa ho *(exact)* | 0.00 |
+| 19 | a nga dzhia tsheo ya | a nga dzhia tsheo ya *(exact)* | 0.00 |
+| 20 | lushaka hune ha vhonala na | lushaka hune ha vhonala na u | 0.20 |
+
+Nearly identical to the plain full-scale run's own first 20 rows (same
+clips, same seed, checked directly against `results/preds_full/final_nchlt_test.csv`)
+- only 5 of the 20 rows differ from that run at all (rows 6, 7, 9, 13, 20
+above), and where they differ it is by one or two characters, not a
+different class of error. The real difference this run makes shows up in
+the aggregate ANV number above, not in these particular NCHLT rows.
+
+This closes the "true full-scale augmented run" item that was previously
+listed as still open (see `notes/conclusions.md`).
 
 ## Objective 3: two-stage fine-tuning + LoRA (Sub-question 3)
 

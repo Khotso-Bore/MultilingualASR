@@ -186,6 +186,48 @@ pattern in real output rather than just an abstract caveat.
   (`results/*` is gitignored except `results/logs/`) - the raw run log is
   the tracked evidence trail instead.
 
+## A browser-playable version: Mafhungo Radar
+
+Everything above needs a Python environment and local model checkpoints to
+run. To make the underlying task, not the ASR side, something someone can
+actually play with in a browser, `src/demo/train_browser_classifier_ven.py`
+trains a small TF-IDF plus logistic regression model on the exact same
+358-article proxy dataset, and exports its weights as JSON
+(`src/demo/browser_classifier_weights_ven.json`, 3,000-word vocabulary,
+174 KB). A static HTML page (`src/demo/mafhungo_radar_template.html`, a
+template - the placeholders need substituting with that JSON before it's a
+real page, see the comment at the top of the file) loads those weights and
+scores whatever Tshivenda text someone types, live, with no server and no
+Python involved.
+
+**Why a different, smaller model instead of shrinking AfroXLM-RoBERTa**: a
+278M-parameter transformer cannot run inside a static webpage with no
+backend. This is not a compressed copy of the real classifier, it is a
+different, much simpler model trained on the same data for the same task,
+and it is reported as exactly that everywhere it appears, including inside
+the page itself.
+
+**5-fold grouped CV on this smaller model**: 0.584 accuracy, 0.569 macro F1
+(`Davlan/afro-xlmr-base`'s reported result on the same data: 0.562 accuracy,
+0.550 macro F1 - see `notes/tshivenda-classifier-proxy.md`). The two land in
+the same range. A simple linear model over word frequencies doing about as
+well as a frozen-base transformer on 358 examples is a reasonable outcome at
+this dataset size, not a contradiction of Objective 4's result.
+
+**Explainability came for free with this architecture**: since it's a
+linear model over word frequencies, each word's exact contribution to the
+verdict is knowable, so the page highlights the input text itself, green for
+words that pushed toward "real," red for words that pushed toward "fake,"
+scaled by how much each one mattered, plus a ranked list of the top words on
+each side. AfroXLM-RoBERTa's verdicts cannot be explained this directly,
+this is a genuine capability the simpler model has that the real one does
+not.
+
+Example sentences built into the page are real rows from the proxy dataset
+itself (three real/fake pairs, `src/demo/browser_classifier_examples_ven.json`),
+labeled with their true label so anyone trying it can see whether the model
+agrees.
+
 ## How to reproduce
 
 ```bash
@@ -199,6 +241,9 @@ python src/demo/asr_to_classifier_pipeline_ven.py --random-clip --seed 42
 # batch, real volume (~45 min of generation time for 1000 clips on M4 MPS)
 python src/demo/run_pipeline_batch_ven.py --limit 500 --seed 42 \
     --out results/demo_pipeline/pipeline_batch_results.csv
+
+# the browser demo's weights (~1 min)
+python src/demo/train_browser_classifier_ven.py
 ```
 
 Logs used for this writeup: `results/logs/classifier_final_checkpoint_train.log`,

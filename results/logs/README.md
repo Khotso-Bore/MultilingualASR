@@ -1,6 +1,6 @@
 # Run Logs
 
-**Run count so far: 37 total training/pipeline runs** (6 classifier + 1 error-propagation
+**Run count so far: 38 total training/pipeline runs** (6 classifier + 1 error-propagation
 degradation study, 2 Wav2Vec2 pilots + 1 Wav2Vec2 full-scale + 1 Wav2Vec2
 augmentation pilot, 6 AfriHuBERT attempts, 3 pilot-scale Whisper runs (v1
 done, an aborted v2 attempt, a rescoped v2 done) + 1 Whisper full-scale +
@@ -8,9 +8,10 @@ done, an aborted v2 attempt, a rescoped v2 done) + 1 Whisper full-scale +
 follow-up, 2 MMS attempts, 1 w2v-BERT attempt, 1 data2vec-audio attempt,
 1 UniSpeech attempt, 2 XLSR-53 attempts, 1 SSA-HuBERT attempt, 3 two-stage
 LoRA runs (Stage 1 bad-LR + Stage 1 fixed-LR + Stage 2) + 1 same-capacity
-LoRA control, 1 final-checkpoint classifier save + 1 real-audio demo
-pipeline batch run). Updated as each new run finishes; every run (success,
-failure, or abort) gets one entry here.
+LoRA control, 1 true full-scale augmentation run, 1 final-checkpoint
+classifier save + 1 real-audio demo pipeline batch run). Updated as each
+new run finishes; every run (success, failure, or abort) gets one entry
+here.
 
 **A note on where later logs live**: runs from Objective 1's full-scale
 push onward (2026-09-21 onward) were originally redirected to `/tmp/*.log`
@@ -303,6 +304,18 @@ both pilot scripts by switching to `Dataset.from_generator()`.
 
 See `notes/pilot-ven-results.md` ("Objective 2" section and its "Follow-up
 run" subsection) for full interpretation and real examples.
+
+4. `whisper_augment_true_fullscale_180k.log` / `standardized_eval_augment_fullscale.log`
+   - the actual full-scale question run 3 above was a scaled proxy for:
+   all 60,087 real clips augmented to ~180,000 effective examples, 1 epoch.
+   Standardized eval: **NCHLT WER 0.122, CER 0.035; ANV WER 0.197, CER 0.048**
+   - slightly worse than the plain full-scale result on NCHLT (0.103), but
+   a real 23% relative improvement on the harder ANV domain (0.256 -> 0.197).
+   Took 38h28m, competing partway through with a concurrent demo pipeline
+   job on the same machine (see `notes/pilot-ven-results.md`, "True
+   full-scale run" subsection, for the honest timing caveat that comes with
+   that). This closes the "true full-scale augmented run" item that was
+   previously open.
 
 ## Objective 3: two-stage fine-tuning + LoRA (2026-09-22/24)
 

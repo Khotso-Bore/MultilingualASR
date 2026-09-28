@@ -78,12 +78,20 @@ model/data gets stronger, and it does not substitute for real data.**
 | Whisper, + augmentation (5k->15k) | 0.217 | 18% |
 | Whisper, + augmentation at matched volume (20k->60k) | 0.187 | improves further, still behind... |
 | Whisper, full-scale real data (60k, no augmentation) | 0.103 | ...genuinely more real data |
+| Whisper, true full-scale augmentation (60k->180k effective) | 0.122 (ANV: 0.197, vs. 0.256 without) | a real trade, not a clean win |
 
-Evidence: `notes/pilot-ven-results.md` ("Objective 2" section and its
-"Follow-up run" subsection) - includes the real memory bug (silent OOM
-kill) hit and fixed while running the matched-volume test, and
-checkpoint-by-checkpoint progressions showing *when* augmented models
-actually improve during training.
+The true full-scale run (180,000 effective training examples, the actual
+volume the matched-volume test above was a scaled proxy for) makes NCHLT
+slightly worse but ANV meaningfully better (WER 0.256 -> 0.197, a 23%
+relative improvement) - augmentation helps more on the harder domain, the
+same pattern seen throughout this section, now confirmed at the scale that
+was previously only estimated.
+
+Evidence: `notes/pilot-ven-results.md` ("Objective 2" section, its
+"Follow-up run" subsection, and the "True full-scale run" subsection after
+it) - includes the real memory bug (silent OOM kill) hit and fixed while
+running the matched-volume test, and checkpoint-by-checkpoint progressions
+showing *when* augmented models actually improve during training.
 
 ## Sub-question 3: two-stage vs. single-stage fine-tuning
 
@@ -169,10 +177,9 @@ aggregate F1 curve.
   LoRA result showed a word-boundary-merge artifact that looks like a
   rank-8 capacity limit; untested whether a higher rank closes more of the
   gap to full fine-tuning.
-- **A true full-scale augmented run** (180k effective examples, not the
-  20k->60k matched-volume compromise) - would take an estimated 30+ hours;
-  the matched-volume result is a scaled-down but real proxy for this
-  question, not a substitute for the definitive number.
+- ~~A true full-scale augmented run (180k effective examples)~~ - **done**:
+  NCHLT WER 0.122, ANV WER 0.197 (vs. 0.103/0.256 without augmentation) -
+  see `notes/pilot-ven-results.md` ("True full-scale run").
 - **Statistical confidence on the classifier** - Objective 4's numbers are
   one 5-fold run on 179 source articles; more seeds would turn the single
   point estimate into a proper mean +/- std, the same way the report

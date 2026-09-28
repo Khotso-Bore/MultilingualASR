@@ -47,6 +47,8 @@ src/                          # reusable pipeline code, grouped by stage
   demo/                           # the actual audio-in, verdict-out pipeline, ASR checkpoint chained into the classifier
     asr_to_classifier_pipeline_ven.py  # one real clip in, one verdict out
     run_pipeline_batch_ven.py          # same two models loaded once, run over many real clips, resumable
+    train_browser_classifier_ven.py    # small TF-IDF + logistic regression model, exportable to run live in a browser
+    mafhungo_radar_template.html       # the browser demo page (template - see the comment at its top to build it)
 
 notebooks/                    # thin wrappers around src/ for local iteration, plus Colab bootstrap notebooks
   notebook.ipynb                 # pre-language-split streaming-sample EDA
