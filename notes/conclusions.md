@@ -173,17 +173,20 @@ aggregate F1 curve.
   training pipeline against its raw feature-extraction API from scratch.
   Logged as a
   deliberate no, not a failure.
-- **A same-capacity LoRA rank sweep** (16/32, not just 8) - the two-stage
-  LoRA result showed a word-boundary-merge artifact that looks like a
-  rank-8 capacity limit; untested whether a higher rank closes more of the
-  gap to full fine-tuning.
+- ~~A same-capacity LoRA rank sweep~~ - **done** at rank 16: NCHLT WER
+  0.295 (vs. rank 8's 0.321), but ANV gets worse (0.840 vs. 0.797) - a real
+  trade-off, not a clean win, see `notes/pilot-ven-results.md` ("Objective
+  3" Run 3). Rank 32 specifically was deliberately not pursued once rank
+  16's trade-off was characterized - not worth sinking more time into per
+  Seani's model-selection guidance (try candidates, drop into full runs
+  only where it clearly pays off).
 - ~~A true full-scale augmented run (180k effective examples)~~ - **done**:
   NCHLT WER 0.122, ANV WER 0.197 (vs. 0.103/0.256 without augmentation) -
   see `notes/pilot-ven-results.md` ("True full-scale run").
-- **Statistical confidence on the classifier** - Objective 4's numbers are
-  one 5-fold run on 179 source articles; more seeds would turn the single
-  point estimate into a proper mean +/- std, the same way the report
-  already does for other results.
+- ~~Statistical confidence on the classifier~~ - **done**: 2 more seeds
+  run (7 and 123), mean accuracy across all 3 seeds 0.576, spread about 1.2
+  points - a stable number, not a one-off, see
+  `notes/tshivenda-classifier-proxy.md` ("Confidence check: 2 more seeds").
 - The repo-restructure pass (`src/asr/` grouping 10 files under one flat
   directory) is planned but not done - purely cosmetic, doesn't affect any
   result.
