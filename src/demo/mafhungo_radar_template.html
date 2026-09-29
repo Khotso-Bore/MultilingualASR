@@ -1,0 +1,505 @@
+<!--
+  Template for the "Mafhungo Radar" browser misinformation-checker demo.
+  Not runnable as-is: __WEIGHTS_JSON__ and __EXAMPLES_JSON__ are placeholders.
+
+  To build the real page:
+    1. python src/demo/train_browser_classifier_ven.py
+       (writes src/demo/browser_classifier_weights_ven.json)
+    2. Substitute both placeholders with that file's contents and a JSON
+       array of {label, title, text} example rows, then publish the result.
+
+  See notes/tshivenda-demo-pipeline.md for what this is and its honest limits.
+-->
+<title>Mafhungo Radar</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,500;0,9..144,600;0,9..144,700;1,9..144,600&family=Source+Sans+3:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap">
+<style>
+  :root {
+    --bg: #F1ECDF;
+    --surface: #FFFFFF;
+    --surface-2: #E9E1CC;
+    --ink: #23261E;
+    --muted: #6E6852;
+    --border: #DAD0B4;
+    --accent: #1F6F63;
+    --accent-ink: #0E3F38;
+    --accent-bg: #DCEDE9;
+    --real: #2E7D32;
+    --real-bg: #E3F1E1;
+    --fake: #AD3A2C;
+    --fake-bg: #F7E3DC;
+    --track: #E4DAC1;
+    --shadow: 0 1px 2px rgba(35,38,30,0.06), 0 8px 24px rgba(35,38,30,0.06);
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --bg: #14181A;
+      --surface: #1C2123;
+      --surface-2: #242A2C;
+      --ink: #EDE8DA;
+      --muted: #A39C87;
+      --border: #343B3A;
+      --accent: #5FCBB6;
+      --accent-ink: #C6F3E8;
+      --accent-bg: #1E3733;
+      --real: #82CC85;
+      --real-bg: #22362A;
+      --fake: #F0977F;
+      --fake-bg: #3A2621;
+      --track: #2C3232;
+      --shadow: 0 1px 2px rgba(0,0,0,0.3), 0 8px 24px rgba(0,0,0,0.35);
+    }
+  }
+  :root[data-theme="dark"] {
+    --bg: #14181A;
+    --surface: #1C2123;
+    --surface-2: #242A2C;
+    --ink: #EDE8DA;
+    --muted: #A39C87;
+    --border: #343B3A;
+    --accent: #5FCBB6;
+    --accent-ink: #C6F3E8;
+    --accent-bg: #1E3733;
+    --real: #82CC85;
+    --real-bg: #22362A;
+    --fake: #F0977F;
+    --fake-bg: #3A2621;
+    --track: #2C3232;
+    --shadow: 0 1px 2px rgba(0,0,0,0.3), 0 8px 24px rgba(0,0,0,0.35);
+  }
+
+  * { box-sizing: border-box; }
+  body {
+    background: var(--bg);
+    color: var(--ink);
+    font-family: 'Source Sans 3', ui-sans-serif, system-ui, sans-serif;
+    font-size: 16px;
+    line-height: 1.55;
+    padding: 40px 20px 80px;
+  }
+  .wrap { max-width: 760px; margin: 0 auto; }
+
+  header { margin-bottom: 28px; }
+  .kicker {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 12px;
+    letter-spacing: 0.09em;
+    text-transform: uppercase;
+    color: var(--accent);
+    margin-bottom: 10px;
+  }
+  h1 {
+    font-family: 'Fraunces', Georgia, serif;
+    font-weight: 600;
+    font-size: 40px;
+    line-height: 1.08;
+    margin: 0 0 10px;
+    text-wrap: balance;
+  }
+  h1 em { font-style: italic; font-weight: 600; color: var(--accent-ink); }
+  .subtitle {
+    color: var(--muted);
+    font-size: 16px;
+    max-width: 58ch;
+  }
+
+  .card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    box-shadow: var(--shadow);
+    padding: 24px;
+    margin-bottom: 20px;
+  }
+  .card h2 {
+    font-family: 'Fraunces', Georgia, serif;
+    font-weight: 600;
+    font-size: 15px;
+    letter-spacing: 0.02em;
+    margin: 0 0 14px;
+    color: var(--muted);
+    text-transform: uppercase;
+    font-size: 12px;
+  }
+
+  .examples { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 16px; }
+  .example-chip {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 12px;
+    background: var(--surface-2);
+    border: 1px solid var(--border);
+    color: var(--ink);
+    border-radius: 999px;
+    padding: 6px 12px 6px 8px;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    transition: border-color 0.15s ease, transform 0.1s ease;
+  }
+  .example-chip:hover { border-color: var(--accent); }
+  .example-chip:active { transform: scale(0.97); }
+  .example-chip .tag {
+    border-radius: 999px;
+    padding: 1px 7px;
+    font-weight: 600;
+    font-size: 10px;
+    letter-spacing: 0.04em;
+  }
+  .tag.real { background: var(--real-bg); color: var(--real); }
+  .tag.fake { background: var(--fake-bg); color: var(--fake); }
+
+  textarea {
+    width: 100%;
+    min-height: 160px;
+    resize: vertical;
+    background: var(--bg);
+    color: var(--ink);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 14px 16px;
+    font-family: 'Source Sans 3', sans-serif;
+    font-size: 15.5px;
+    line-height: 1.6;
+  }
+  textarea:focus, button:focus-visible, .example-chip:focus-visible {
+    outline: 2px solid var(--accent);
+    outline-offset: 2px;
+  }
+
+  .toolbar { display: flex; align-items: center; justify-content: space-between; margin-top: 14px; gap: 12px; flex-wrap: wrap; }
+  .word-count { font-family: 'IBM Plex Mono', monospace; font-size: 12px; color: var(--muted); }
+  button.check {
+    font-family: 'Source Sans 3', sans-serif;
+    font-weight: 600;
+    font-size: 15px;
+    background: var(--accent);
+    color: var(--surface);
+    border: none;
+    border-radius: 10px;
+    padding: 11px 22px;
+    cursor: pointer;
+    transition: filter 0.15s ease, transform 0.1s ease;
+  }
+  button.check:hover { filter: brightness(1.08); }
+  button.check:active { transform: scale(0.98); }
+
+  .result-head {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    flex-wrap: wrap;
+    margin-bottom: 18px;
+  }
+  .verdict {
+    font-family: 'Fraunces', Georgia, serif;
+    font-weight: 700;
+    font-size: 26px;
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+  }
+  .verdict .dot { width: 12px; height: 12px; border-radius: 50%; display: inline-block; }
+  .verdict.real { color: var(--real); }
+  .verdict.fake { color: var(--fake); }
+  .verdict.real .dot { background: var(--real); }
+  .verdict.fake .dot { background: var(--fake); }
+  .confidence {
+    font-family: 'IBM Plex Mono', monospace;
+    font-variant-numeric: tabular-nums;
+    font-size: 14px;
+    color: var(--muted);
+  }
+
+  .meter {
+    position: relative;
+    height: 10px;
+    border-radius: 999px;
+    background: linear-gradient(90deg, var(--fake) 0%, var(--track) 50%, var(--real) 100%);
+    margin-bottom: 6px;
+  }
+  .meter .marker {
+    position: absolute;
+    top: -4px;
+    width: 4px;
+    height: 18px;
+    background: var(--ink);
+    border-radius: 2px;
+    transform: translateX(-2px);
+  }
+  .meter-labels {
+    display: flex;
+    justify-content: space-between;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 11px;
+    color: var(--muted);
+    margin-bottom: 22px;
+  }
+
+  .highlighted {
+    font-family: 'Source Sans 3', sans-serif;
+    font-size: 15px;
+    line-height: 1.85;
+    padding: 16px;
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    white-space: pre-wrap;
+    max-height: 320px;
+    overflow-y: auto;
+  }
+  .highlighted mark {
+    border-radius: 3px;
+    padding: 0 1px;
+    background: var(--mark-bg);
+    color: inherit;
+  }
+  .legend {
+    display: flex;
+    gap: 18px;
+    font-size: 12px;
+    color: var(--muted);
+    margin: 10px 0 0;
+    flex-wrap: wrap;
+  }
+  .legend span { display: inline-flex; align-items: center; gap: 6px; }
+  .legend .swatch { width: 12px; height: 12px; border-radius: 3px; display: inline-block; }
+
+  .signals { display: grid; grid-template-columns: 1fr 1fr; gap: 18px; margin-top: 20px; }
+  @media (max-width: 560px) { .signals { grid-template-columns: 1fr; } }
+  .signal-col h3 {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 11px;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    margin: 0 0 10px;
+  }
+  .signal-col.real h3 { color: var(--real); }
+  .signal-col.fake h3 { color: var(--fake); }
+  .signal-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 6px;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 12.5px;
+  }
+  .signal-row .bar-track { flex: 1; height: 6px; background: var(--track); border-radius: 999px; overflow: hidden; }
+  .signal-row .bar-fill { height: 100%; border-radius: 999px; }
+  .signal-col.real .bar-fill { background: var(--real); }
+  .signal-col.fake .bar-fill { background: var(--fake); }
+  .signal-row .word { min-width: 84px; }
+  .empty-note { color: var(--muted); font-size: 13px; font-style: italic; }
+
+  .caveat p { margin: 0 0 12px; color: var(--muted); font-size: 14.5px; }
+  .caveat p:last-child { margin-bottom: 0; }
+  .caveat strong { color: var(--ink); }
+  .stat-row {
+    display: flex;
+    gap: 22px;
+    flex-wrap: wrap;
+    margin: 4px 0 16px;
+    font-family: 'IBM Plex Mono', monospace;
+  }
+  .stat { }
+  .stat .n { font-size: 22px; font-weight: 600; color: var(--ink); font-variant-numeric: tabular-nums; }
+  .stat .label { font-size: 11px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.04em; }
+
+  footer { text-align: center; color: var(--muted); font-size: 12.5px; margin-top: 30px; }
+  footer a { color: var(--accent); }
+
+  #result-card[hidden] { display: none; }
+</style>
+
+<div class="wrap">
+  <header>
+    <div class="kicker">Tshivenda ASR &amp; misinformation project &middot; live demo</div>
+    <h1>Mafhungo <em>Radar</em></h1>
+    <p class="subtitle">Type or paste Tshivenda text below. A small model, trained on this project's real/fake proxy news dataset, scores it live in your browser, no server involved.</p>
+  </header>
+
+  <section class="card">
+    <h2>Try it</h2>
+    <div class="examples" id="examples"></div>
+    <textarea id="input" spellcheck="false"></textarea>
+    <div class="toolbar">
+      <span class="word-count" id="word-count">0 words</span>
+      <button class="check" id="check-btn">Check this text</button>
+    </div>
+  </section>
+
+  <section class="card" id="result-card" hidden>
+    <h2>Result</h2>
+    <div class="result-head">
+      <div class="verdict" id="verdict"><span class="dot"></span><span id="verdict-text">—</span></div>
+      <div class="confidence" id="confidence-text"></div>
+    </div>
+    <div class="meter"><div class="marker" id="marker"></div></div>
+    <div class="meter-labels"><span>fake</span><span>real</span></div>
+
+    <div class="highlighted" id="highlighted"></div>
+    <div class="legend">
+      <span><span class="swatch" style="background:var(--real-bg); border:1px solid var(--real);"></span>pushes toward real</span>
+      <span><span class="swatch" style="background:var(--fake-bg); border:1px solid var(--fake);"></span>pushes toward fake</span>
+      <span><span class="swatch" style="background:transparent; border:1px solid var(--border);"></span>not in the model's vocabulary</span>
+    </div>
+
+    <div class="signals">
+      <div class="signal-col real"><h3>Top words &rarr; real</h3><div id="signals-real"></div></div>
+      <div class="signal-col fake"><h3>Top words &rarr; fake</h3><div id="signals-fake"></div></div>
+    </div>
+  </section>
+
+  <section class="card caveat">
+    <h2>What this actually is</h2>
+    <div class="stat-row">
+      <div class="stat"><div class="n" id="stat-cv-acc">—</div><div class="label">this model, 5-fold CV</div></div>
+      <div class="stat"><div class="n">56.2%</div><div class="label">the real reported result</div></div>
+      <div class="stat"><div class="n">358</div><div class="label">training articles</div></div>
+    </div>
+    <p>This page runs a small TF-IDF and logistic regression model, not the actual research model. The project's real, reported misinformation classifier is AfroXLM-RoBERTa, a 278 million parameter transformer, too large to run inside a webpage with no backend attached. Both models are trained on the exact same 358-article dataset, so the comparison above is apples to apples: this lightweight browser version and the real transformer land in the same range, around 56 to 58 percent accuracy on this task.</p>
+    <p>The training data is real Tshivenda government news from Vukuzenzele, paired with synthetic fake counterparts built by distorting numbers, dates, names, and one sentence per article. There is no dataset of real, organic Tshivenda misinformation to train on, the original Mukwevho et al. dataset this project was meant to use has been permanently lost. So a verdict here reflects whether text matches the pattern of this specific fact-distortion method, not general truthfulness.</p>
+    <p>The word highlighting above shows exactly why the model reached its verdict: it is a linear model over word frequencies, so every word's contribution to the score can be shown honestly, nothing hidden in a black box.</p>
+  </section>
+
+  <footer>Built on top of the Tshivenda ASR and misinformation detection sub-study, COS700, University of Pretoria.</footer>
+</div>
+
+<script>
+const WEIGHTS = __WEIGHTS_JSON__;
+const EXAMPLES = __EXAMPLES_JSON__;
+
+const TOKEN_RE = /\p{L}{2,}/gu;
+
+function scoreText(text) {
+  const matches = [...text.matchAll(TOKEN_RE)];
+  const counts = {};
+  for (const m of matches) {
+    const t = m[0].toLowerCase();
+    if (t in WEIGHTS.vocab) counts[t] = (counts[t] || 0) + 1;
+  }
+  const terms = Object.keys(counts);
+  let sumSq = 0;
+  const tfidf = {};
+  for (const t of terms) {
+    const idx = WEIGHTS.vocab[t];
+    const v = counts[t] * WEIGHTS.idf[idx];
+    tfidf[t] = v;
+    sumSq += v * v;
+  }
+  const norm = Math.sqrt(sumSq) || 1;
+  let dot = 0;
+  const contribution = {}; // per single occurrence
+  for (const t of terms) {
+    const idx = WEIGHTS.vocab[t];
+    dot += (tfidf[t] / norm) * WEIGHTS.coef[idx];
+    contribution[t] = (WEIGHTS.idf[idx] * WEIGHTS.coef[idx]) / norm;
+  }
+  const z = dot + WEIGHTS.intercept;
+  const pReal = 1 / (1 + Math.exp(-z));
+  return { pReal, matches, contribution };
+}
+
+function renderHighlighted(text, matches, contribution) {
+  const maxAbs = Math.max(1e-9, ...Object.values(contribution).map(v => Math.abs(v)));
+  let html = "";
+  let cursor = 0;
+  for (const m of matches) {
+    const start = m.index;
+    const end = start + m[0].length;
+    html += escapeHtml(text.slice(cursor, start));
+    const t = m[0].toLowerCase();
+    if (t in contribution) {
+      const c = contribution[t];
+      const intensity = Math.min(1, Math.abs(c) / maxAbs);
+      const alpha = (0.12 + 0.55 * intensity).toFixed(2);
+      const color = c >= 0
+        ? `rgba(46,125,50,${alpha})`
+        : `rgba(173,58,44,${alpha})`;
+      html += `<mark style="--mark-bg:${color}; background:${color};">${escapeHtml(m[0])}</mark>`;
+    } else {
+      html += escapeHtml(m[0]);
+    }
+    cursor = end;
+  }
+  html += escapeHtml(text.slice(cursor));
+  return html;
+}
+
+function escapeHtml(s) {
+  return s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+}
+
+function topSignals(contribution, sign, n) {
+  return Object.entries(contribution)
+    .filter(([, v]) => (sign > 0 ? v > 0 : v < 0))
+    .sort((a, b) => Math.abs(b[1]) - Math.abs(a[1]))
+    .slice(0, n);
+}
+
+function renderSignals(containerId, entries, maxAbs) {
+  const el = document.getElementById(containerId);
+  if (!entries.length) { el.innerHTML = '<div class="empty-note">no words found</div>'; return; }
+  el.innerHTML = entries.map(([word, v]) => {
+    const pct = Math.max(6, Math.round((Math.abs(v) / maxAbs) * 100));
+    return `<div class="signal-row"><span class="word">${escapeHtml(word)}</span><span class="bar-track"><span class="bar-fill" style="width:${pct}%"></span></span></div>`;
+  }).join("");
+}
+
+function runCheck() {
+  const text = document.getElementById("input").value.trim();
+  const resultCard = document.getElementById("result-card");
+  if (!text) { resultCard.hidden = true; return; }
+
+  const { pReal, matches, contribution } = scoreText(text);
+  resultCard.hidden = false;
+
+  const isReal = pReal >= 0.5;
+  const verdictEl = document.getElementById("verdict");
+  verdictEl.className = "verdict " + (isReal ? "real" : "fake");
+  document.getElementById("verdict-text").textContent = isReal ? "Likely real" : "Likely fake";
+  const confPct = Math.round((isReal ? pReal : 1 - pReal) * 100);
+  document.getElementById("confidence-text").textContent = `${confPct}% confidence · P(real) = ${pReal.toFixed(3)}`;
+
+  document.getElementById("marker").style.left = `${(pReal * 100).toFixed(1)}%`;
+
+  document.getElementById("highlighted").innerHTML = renderHighlighted(text, matches, contribution);
+
+  const allAbs = Object.values(contribution).map(v => Math.abs(v));
+  const maxAbs = Math.max(1e-9, ...allAbs);
+  renderSignals("signals-real", topSignals(contribution, 1, 6), maxAbs);
+  renderSignals("signals-fake", topSignals(contribution, -1, 6), maxAbs);
+}
+
+function updateWordCount() {
+  const text = document.getElementById("input").value;
+  const n = (text.match(TOKEN_RE) || []).length;
+  document.getElementById("word-count").textContent = `${n} word${n === 1 ? "" : "s"}`;
+}
+
+function loadExample(ex) {
+  document.getElementById("input").value = ex.text;
+  updateWordCount();
+  runCheck();
+}
+
+function buildExampleChips() {
+  const wrap = document.getElementById("examples");
+  wrap.innerHTML = "";
+  EXAMPLES.forEach((ex) => {
+    const chip = document.createElement("button");
+    chip.className = "example-chip";
+    chip.type = "button";
+    const tag = ex.label === 1 ? "real" : "fake";
+    chip.innerHTML = `<span class="tag ${tag}">${tag}</span>${escapeHtml(ex.title.slice(0, 34))}${ex.title.length > 34 ? "…" : ""}`;
+    chip.addEventListener("click", () => loadExample(ex));
+    wrap.appendChild(chip);
+  });
+}
+
+document.getElementById("input").addEventListener("input", updateWordCount);
+document.getElementById("check-btn").addEventListener("click", runCheck);
+document.getElementById("stat-cv-acc").textContent = `${Math.round(WEIGHTS.cv_accuracy * 100)}%`;
+
+buildExampleChips();
+loadExample(EXAMPLES[2]); // NSFAS real example, a representative mid-length article
+</script>

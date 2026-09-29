@@ -1,6 +1,6 @@
 # Run Logs
 
-**Run count so far: 35 total training runs** (6 classifier + 1 error-propagation
+**Run count so far: 38 total training/pipeline runs** (6 classifier + 1 error-propagation
 degradation study, 2 Wav2Vec2 pilots + 1 Wav2Vec2 full-scale + 1 Wav2Vec2
 augmentation pilot, 6 AfriHuBERT attempts, 3 pilot-scale Whisper runs (v1
 done, an aborted v2 attempt, a rescoped v2 done) + 1 Whisper full-scale +
@@ -8,8 +8,10 @@ done, an aborted v2 attempt, a rescoped v2 done) + 1 Whisper full-scale +
 follow-up, 2 MMS attempts, 1 w2v-BERT attempt, 1 data2vec-audio attempt,
 1 UniSpeech attempt, 2 XLSR-53 attempts, 1 SSA-HuBERT attempt, 3 two-stage
 LoRA runs (Stage 1 bad-LR + Stage 1 fixed-LR + Stage 2) + 1 same-capacity
-LoRA control). Updated as each new run finishes; every run (success,
-failure, or abort) gets one entry here.
+LoRA control, 1 true full-scale augmentation run, 1 final-checkpoint
+classifier save + 1 real-audio demo pipeline batch run). Updated as each
+new run finishes; every run (success, failure, or abort) gets one entry
+here.
 
 **A note on where later logs live**: runs from Objective 1's full-scale
 push onward (2026-09-21 onward) were originally redirected to `/tmp/*.log`
@@ -134,7 +136,7 @@ solution, not resolved by six systematic attempts (default config, 2x lower
 LR, unfrozen encoder, 3x longer warmup, blank-bias correction, and disabled
 early stopping across 25 epochs) within the project timeline. Root cause
 confirmed by direct inspection of decoded predictions at every stage, not
-just inferred from WER. `src/asr/pilot_finetune_hubert_mps_ven.py` and
+just inferred from WER. `src/asr/ctc/pilot_finetune_hubert_mps_ven.py` and
 `notebooks/asr/colab_hubert_ven.ipynb` are kept in the repo (with the diagnostic
 flags added during this investigation: `--unfreeze-feature-encoder`,
 `--warmup-ratio`, `--disfavor-blank-init`, `--blank-bias-penalty`,
@@ -273,7 +275,7 @@ training-progression tables built from these runs.
 
 ## Objective 2: data augmentation - SpecAugment + speed perturbation (2026-09-23/25)
 
-`src/asr/audio_augment_ven.py` (speed perturbation) plus HuggingFace's
+`src/asr/shared/audio_augment_ven.py` (speed perturbation) plus HuggingFace's
 built-in SpecAugment config flags, added to both pilot scripts.
 
 1. `wav2vec2_augment_pilot_wer0269.log` - 5,000 NCHLT clips (tripled to
@@ -302,6 +304,18 @@ both pilot scripts by switching to `Dataset.from_generator()`.
 
 See `notes/pilot-ven-results.md` ("Objective 2" section and its "Follow-up
 run" subsection) for full interpretation and real examples.
+
+4. `whisper_augment_true_fullscale_180k.log` / `standardized_eval_augment_fullscale.log`
+   - the actual full-scale question run 3 above was a scaled proxy for:
+   all 60,087 real clips augmented to ~180,000 effective examples, 1 epoch.
+   Standardized eval: **NCHLT WER 0.122, CER 0.035; ANV WER 0.197, CER 0.048**
+   - slightly worse than the plain full-scale result on NCHLT (0.103), but
+   a real 23% relative improvement on the harder ANV domain (0.256 -> 0.197).
+   Took 38h28m, competing partway through with a concurrent demo pipeline
+   job on the same machine (see `notes/pilot-ven-results.md`, "True
+   full-scale run" subsection, for the honest timing caveat that comes with
+   that). This closes the "true full-scale augmented run" item that was
+   previously open.
 
 ## Objective 3: two-stage fine-tuning + LoRA (2026-09-22/24)
 
@@ -391,3 +405,18 @@ full-scale Whisper error model. Clean baseline F1 0.546 (matches Objective
 0.516-0.550). See `notes/tshivenda-error-propagation.md` for the full
 write-up, real corrupted-text examples, and the practical reliability
 threshold this implies.
+
+## Demo pipeline: real audio through both models (2026-09-28)
+
+`classifier_final_checkpoint_train.log` - trains and saves the first
+deployable classifier checkpoint (`results/classifier/final`); 5-fold CV
+never kept one, each fold overwrote the same temp directory. Single 90/10
+grouped held-out split: accuracy 0.648, macro F1 0.642 (n=54).
+
+`demo_pipeline_batch_1000clips.log` - 1,000 real NCHLT/ANV clips run through
+the full audio-to-verdict pipeline (`src/demo/run_pipeline_batch_ven.py`),
+one clip at a time through a live pipeline rather than a batched eval.
+Surfaced a real robustness finding: 1.6% of the ANV sample triggered
+runaway/repetition-loop generation, visible in this log as the processing
+rate dropping from ~0.36 to ~0.12 clips/second partway through. See
+`notes/tshivenda-demo-pipeline.md` for the full write-up.

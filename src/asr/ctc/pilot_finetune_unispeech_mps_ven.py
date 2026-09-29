@@ -1,18 +1,36 @@
-"""Pilot Wav2Vec2 fine-tune for Tshivenda on Apple Silicon (MPS).
+"""Pilot UniSpeech fine-tune for Tshivenda on Apple Silicon (MPS).
 
-NOT the real Stage 1 run (that needs a CUDA GPU - see
-notebooks/finetune_wav2vec2_ven.ipynb). This is a reduced overnight pilot on
-the M4 to (a) prove the training loop end-to-end, (b) get a first fine-tuned
-WER well below the 110.8% zero-shot baseline, (c) surface bugs before spending
-Colab hours.
+Seventh ASR model family attempt. Four CTC fine-tunes have now collapsed
+(AfriHuBERT, MMS, w2v-BERT, data2vec-audio) across four different
+architectures and pretraining objectives; two follow-up theories
+(discretized targets, learning rate) were tested and disproved against MMS
+- see notes/pilot-ven-results.md. Wav2Vec2 XLS-R-300M remains the only
+non-Whisper CTC checkpoint that trains cleanly, with no confirmed
+explanation for why.
 
-Reduced scope: subset of NCHLT train clips, few epochs, XLS-R-300M with the
-shared committed tokenizer (tokenizers/ven/). CTC loss has no MPS kernel, so
-run with PYTORCH_ENABLE_MPS_FALLBACK=1 (loss computes on CPU; the encoder,
-which dominates compute, stays on the GPU).
+`microsoft/unispeech-large-1500h-cv` is architecturally closer to XLS-R
+than the last three attempts (Transformer over CNN raw-waveform features,
+loads via UniSpeechForCTC - same family shape as Wav2Vec2ForCTC/HubertForCTC),
+but the pretraining recipe is genuinely different: a multi-task objective
+combining phonetically-aware contrastive self-supervision with supervised
+phonetic CTC learning, pretrained on CommonVoice's multilingual pool.
+Notably, UniSpeech's own paper specifically evaluates cross-lingual transfer
+to unseen languages via CommonVoice - the same scenario as this pilot,
+rather than an incidental side effect the way XLS-R/MMS/Whisper's
+Tshivenda transfer is.
+
+Reuses the existing tokenizers/ven/ CTC tokenizer and a standard
+Wav2Vec2FeatureExtractor (raw waveform input, same as XLS-R/MMS) - this
+script is close to a line-for-line copy of pilot_finetune_wav2vec2_mps_ven.py
+with the model class and checkpoint swapped.
+
+NOT the real Stage 1 run (needs a CUDA GPU). This is a reduced overnight
+pilot on the M4 to (a) prove the training loop end-to-end with this
+checkpoint, (b) get a first fine-tuned WER, (c) surface bugs before
+spending Colab hours - same role as the other pilots.
 
 Usage:
-    PYTORCH_ENABLE_MPS_FALLBACK=1 python src/asr/pilot_finetune_wav2vec2_mps_ven.py
+    PYTORCH_ENABLE_MPS_FALLBACK=1 python src/asr/pilot_finetune_unispeech_mps_ven.py
     ... --train-clips 50 --eval-clips 20 --epochs 1   # smoke test
 """
 
@@ -20,32 +38,28 @@ import argparse
 from pathlib import Path
 
 import numpy as np
-import soundfile as sf
 import torch
-from datasets import Audio, Dataset, Features, Value, load_dataset
+from datasets import Audio, Features, Value, load_dataset
 from jiwer import cer, wer
 from transformers import (
     Trainer,
     TrainingArguments,
+    UniSpeechForCTC,
     Wav2Vec2CTCTokenizer,
     Wav2Vec2FeatureExtractor,
-    Wav2Vec2ForCTC,
     Wav2Vec2Processor,
 )
 
-import sys
-sys.path.insert(0, str(Path(__file__).resolve().parent))
-from audio_augment_ven import SPEED_RATES, speed_perturb
-
-REPO_ROOT = Path(__file__).resolve().parents[2]
+REPO_ROOT = Path(__file__).resolve().parents[3]
 DATA = REPO_ROOT / "dataset" / "processed"
 TOKENIZER_DIR = REPO_ROOT / "tokenizers" / "ven"
-OUTPUT_DIR = REPO_ROOT / "results" / "wav2vec2-ven-pilot"
+OUTPUT_DIR = REPO_ROOT / "results" / "unispeech-ven-pilot"
+BASE_CHECKPOINT = "microsoft/unispeech-large-1500h-cv"
 
 
 def main(args):
     device = "mps" if torch.backends.mps.is_available() else "cpu"
-    print(f"pilot fine-tune | device: {device} | train clips: {args.train_clips} | "
+    print(f"UniSpeech pilot fine-tune | device: {device} | train clips: {args.train_clips} | "
           f"eval clips: {args.eval_clips} | epochs: {args.epochs}")
 
     train_files = [str(DATA / "nchlt_ven" / "train.csv")]
@@ -61,32 +75,6 @@ def main(args):
     ds["train"] = ds["train"].shuffle(seed=42).select(range(min(args.train_clips, len(ds["train"]))))
     ds["eval"] = ds["eval"].shuffle(seed=42).select(range(min(args.eval_clips, len(ds["eval"]))))
 
-    if args.augment:
-        # speed perturbation (proposal Objective 2, §4.3): add 0.9x/1.1x copies
-        # of every training clip - eval set is left untouched, we only want
-        # more/varied training signal, not to change what "correct" means.
-        # Uses from_generator (streamed to Arrow-backed disk storage) rather
-        # than materializing every decoded array in a Python list at once -
-        # at large clip counts that list held enough decoded float32 audio
-        # in memory to trigger a silent OOM kill (see pilot_finetune_whisper_mps_ven.py
-        # for the full incident writeup).
-        paths = ds["train"].cast_column("audio", Audio(decode=False))["audio"]
-        transcripts = ds["train"]["transcript"]
-        n_raw = len(paths)
-
-        def augmented_generator():
-            for p, t in zip(paths, transcripts):
-                array, sr = sf.read(p["path"])
-                assert sr == 16000, f"expected 16kHz audio, got {sr}Hz for {p['path']}"
-                array = array.astype(np.float32)
-                yield {"array": array, "transcript": t}
-                for rate in SPEED_RATES:
-                    yield {"array": speed_perturb(array, rate), "transcript": t}
-
-        ds["train"] = Dataset.from_generator(augmented_generator)
-        print(f"augmentation: {n_raw} clips -> {len(ds['train'])} "
-              f"(speed {SPEED_RATES} added)")
-
     tokenizer = Wav2Vec2CTCTokenizer.from_pretrained(TOKENIZER_DIR)
     feature_extractor = Wav2Vec2FeatureExtractor(
         feature_size=1, sampling_rate=16000, padding_value=0.0,
@@ -94,20 +82,14 @@ def main(args):
     processor = Wav2Vec2Processor(feature_extractor=feature_extractor, tokenizer=tokenizer)
 
     def prepare(batch):
-        if "array" in batch:
-            array = np.asarray(batch["array"])
-        else:
-            samples = batch["audio"].get_all_samples()
-            array = samples.data.numpy().squeeze()
+        samples = batch["audio"].get_all_samples()
+        array = samples.data.numpy().squeeze()
         batch["input_values"] = processor(array, sampling_rate=16000).input_values[0]
         batch["input_length"] = len(batch["input_values"])
         batch["labels"] = processor.tokenizer(batch["transcript"]).input_ids
         return batch
 
-    # train/eval may now have different column names (augment adds "array"
-    # instead of "audio"), so map each split separately instead of ds.map()
-    ds["train"] = ds["train"].map(prepare, remove_columns=ds["train"].column_names)
-    ds["eval"] = ds["eval"].map(prepare, remove_columns=ds["eval"].column_names)
+    ds = ds.map(prepare, remove_columns=ds["train"].column_names)
 
     if args.max_input_seconds:
         max_len = int(args.max_input_seconds * 16000)
@@ -142,34 +124,20 @@ def main(args):
 
     if args.resume_from:
         # continue from an earlier pilot checkpoint - CTC head already sized to our vocab
-        model = Wav2Vec2ForCTC.from_pretrained(args.resume_from)
+        model = UniSpeechForCTC.from_pretrained(args.resume_from)
         print(f"resumed weights from {args.resume_from}")
     else:
-        model = Wav2Vec2ForCTC.from_pretrained(
-            args.model,
+        model = UniSpeechForCTC.from_pretrained(
+            BASE_CHECKPOINT,
             ctc_loss_reduction="mean", ctc_zero_infinity=True,
             pad_token_id=processor.tokenizer.pad_token_id,
             vocab_size=len(processor.tokenizer),
             ignore_mismatched_sizes=True,
         )
     model.freeze_feature_encoder()
-
-    if args.spec_augment:
-        # HuggingFace's own SpecAugment (Park et al., 2019) implementation -
-        # config is read dynamically each forward pass, so setting it here
-        # (fresh or resumed model) is enough, no need to touch model init.
-        model.config.apply_spec_augment = True
-        model.config.mask_time_prob = args.mask_time_prob
-        model.config.mask_feature_prob = args.mask_feature_prob
-        print(f"SpecAugment enabled: mask_time_prob={args.mask_time_prob} "
-              f"mask_feature_prob={args.mask_feature_prob}")
-
     model = model.to(device)
 
-    if args.out_name:
-        out_dir = OUTPUT_DIR.parent / args.out_name
-    else:
-        out_dir = OUTPUT_DIR if not args.resume_from else OUTPUT_DIR.parent / (OUTPUT_DIR.name + "-v2")
+    out_dir = OUTPUT_DIR if not args.resume_from else OUTPUT_DIR.parent / (OUTPUT_DIR.name + "-v2")
 
     training_args = TrainingArguments(
         output_dir=str(out_dir),
@@ -209,9 +177,12 @@ def main(args):
 
     trainer.train()
     final = trainer.evaluate()
-    print("\n== pilot result ==")
+    print("\n== UniSpeech pilot result ==")
     print(f"eval WER: {final.get('eval_wer'):.3f} | eval CER: {final.get('eval_cer'):.3f}")
-    print(f"(zero-shot Whisper Large v3 baseline on NCHLT test: WER 1.108, CER 0.763)")
+    print("(zero-shot Whisper Large v3 baseline on NCHLT test: WER 1.108, CER 0.763)")
+    print("(Wav2Vec2 XLS-R-300M pilot v2 on NCHLT test: WER 0.332, CER 0.074)")
+    print("(Whisper pilot v2 on NCHLT test: WER 0.182, CER 0.048)")
+    print("(MMS, w2v-BERT, data2vec-audio: all collapse, WER ~0.95-0.97)")
 
     trainer.save_model(str(out_dir / "final"))
     processor.save_pretrained(str(out_dir / "final"))
@@ -220,13 +191,9 @@ def main(args):
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--model", default="facebook/wav2vec2-xls-r-300m",
-                        help="HF checkpoint id, e.g. facebook/wav2vec2-large-xlsr-53")
-    parser.add_argument("--out-name", default=None,
-                        help="override the output dir name under results/ (default: derived from --resume-from)")
     parser.add_argument("--train-clips", type=int, default=5000)
     parser.add_argument("--eval-clips", type=int, default=500)
-    parser.add_argument("--epochs", type=int, default=3)
+    parser.add_argument("--epochs", type=int, default=2)
     parser.add_argument("--batch-size", type=int, default=2)
     parser.add_argument("--grad-accum", type=int, default=8)
     parser.add_argument("--max-input-seconds", type=float, default=10.0,
@@ -236,12 +203,5 @@ if __name__ == "__main__":
                         help="path to a previous pilot final dir to continue training from")
     parser.add_argument("--include-anv", action="store_true",
                         help="mix ANV train/dev CSVs into the data (still capped by max-input-seconds)")
-    parser.add_argument("--augment", action="store_true",
-                        help="speed perturbation (Objective 2): add 0.9x/1.1x copies of every "
-                             "training clip (3x the training data, eval set untouched)")
-    parser.add_argument("--spec-augment", action="store_true",
-                        help="enable HuggingFace's built-in SpecAugment (Objective 2) on the encoder")
-    parser.add_argument("--mask-time-prob", type=float, default=0.05)
-    parser.add_argument("--mask-feature-prob", type=float, default=0.05)
     args = parser.parse_args()
     main(args)

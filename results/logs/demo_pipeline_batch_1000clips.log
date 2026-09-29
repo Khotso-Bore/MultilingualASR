@@ -1,0 +1,30 @@
+device: mps | up to 500 clips per corpus | seed 42
+loading ASR checkpoint /Users/mulisamusehane/Documents/GitHub/MultilingualASR/results/whisper-ven-pilot-v2/final ...
+Loading weights:   0%|          | 0/479 [00:00<?, ?it/s]Loading weights: 100%|██████████| 479/479 [00:00<00:00, 17309.88it/s]
+loading classifier checkpoint /Users/mulisamusehane/Documents/GitHub/MultilingualASR/results/classifier/final ...
+Loading weights:   0%|          | 0/201 [00:00<?, ?it/s]Loading weights: 100%|██████████| 201/201 [00:00<00:00, 9304.32it/s]
+[transformers] A custom logits processor of type <class 'transformers.generation.logits_process.SuppressTokensLogitsProcessor'> has been passed to `.generate()`, but it was also created in `.generate()`, given its parameterization. The custom <class 'transformers.generation.logits_process.SuppressTokensLogitsProcessor'> will take precedence. Please check the docstring of <class 'transformers.generation.logits_process.SuppressTokensLogitsProcessor'> to see related `.generate()` flags.
+[transformers] A custom logits processor of type <class 'transformers.generation.logits_process.SuppressTokensAtBeginLogitsProcessor'> has been passed to `.generate()`, but it was also created in `.generate()`, given its parameterization. The custom <class 'transformers.generation.logits_process.SuppressTokensAtBeginLogitsProcessor'> will take precedence. Please check the docstring of <class 'transformers.generation.logits_process.SuppressTokensAtBeginLogitsProcessor'> to see related `.generate()` flags.
+[transformers] Ignoring clean_up_tokenization_spaces=True for BPE tokenizer WhisperTokenizer. The clean_up_tokenization post-processing step is designed for WordPiece tokenizers and is destructive for BPE (it strips spaces before punctuation). Set clean_up_tokenization_spaces=False to suppress this warning, or set clean_up_tokenization_spaces_for_bpe_even_though_it_will_corrupt_output=True to force cleanup anyway.
+1000/1000 clips left to run
+  50/1000 (0.45 clips/s, ETA 36 min)
+  100/1000 (0.40 clips/s, ETA 38 min)
+  150/1000 (0.36 clips/s, ETA 40 min)
+  200/1000 (0.36 clips/s, ETA 37 min)
+  250/1000 (0.36 clips/s, ETA 35 min)
+  300/1000 (0.36 clips/s, ETA 32 min)
+  350/1000 (0.36 clips/s, ETA 30 min)
+  400/1000 (0.36 clips/s, ETA 28 min)
+  450/1000 (0.37 clips/s, ETA 25 min)
+  500/1000 (0.37 clips/s, ETA 22 min)
+  550/1000 (0.28 clips/s, ETA 27 min)
+  600/1000 (0.23 clips/s, ETA 29 min)
+  650/1000 (0.19 clips/s, ETA 31 min)
+  700/1000 (0.16 clips/s, ETA 30 min)
+  750/1000 (0.15 clips/s, ETA 28 min)
+  800/1000 (0.14 clips/s, ETA 24 min)
+  850/1000 (0.13 clips/s, ETA 19 min)
+  900/1000 (0.13 clips/s, ETA 13 min)
+  950/1000 (0.13 clips/s, ETA 7 min)
+  1000/1000 (0.12 clips/s, ETA 0 min)
+done. wrote results/demo_pipeline/pipeline_batch_results.csv

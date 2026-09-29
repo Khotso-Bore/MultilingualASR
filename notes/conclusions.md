@@ -28,6 +28,19 @@ narrowly (ANV) sit inside.
 This is a complete, evidenced answer for Tshivenda. It is not an answer for
 Setswana or Sepedi - see "What's still open" below.
 
+**Does an actual pipeline exist, audio in, verdict out?** Yes, as of this
+section - `src/demo/`. Real audio flows through the fine-tuned Whisper
+checkpoint, the transcript flows into the misinformation classifier, and a
+real verdict with a confidence score comes out. Run at real volume (1,000
+real clips, not one curated example): see `notes/tshivenda-demo-pipeline.md`
+for the full writeup, including a real robustness finding (occasional
+runaway/repetition-loop generation on longer clips) that a small fixed
+evaluation set had never surfaced. One honest limit stays true throughout:
+there is no audio of the actual real/fake misinformation content the
+classifier was trained on, so a verdict on a transcribed speech clip is real
+but has no ground truth to score it against - the 0.562 accuracy number
+still comes only from the text-only proxy dataset.
+
 ## Sub-question 1: baseline WER/CER for fine-tuned Wav2Vec2 and Whisper
 
 **Answer**: Whisper is the clearly stronger architecture. Full-scale
@@ -65,12 +78,20 @@ model/data gets stronger, and it does not substitute for real data.**
 | Whisper, + augmentation (5k->15k) | 0.217 | 18% |
 | Whisper, + augmentation at matched volume (20k->60k) | 0.187 | improves further, still behind... |
 | Whisper, full-scale real data (60k, no augmentation) | 0.103 | ...genuinely more real data |
+| Whisper, true full-scale augmentation (60k->180k effective) | 0.122 (ANV: 0.197, vs. 0.256 without) | a real trade, not a clean win |
 
-Evidence: `notes/pilot-ven-results.md` ("Objective 2" section and its
-"Follow-up run" subsection) - includes the real memory bug (silent OOM
-kill) hit and fixed while running the matched-volume test, and
-checkpoint-by-checkpoint progressions showing *when* augmented models
-actually improve during training.
+The true full-scale run (180,000 effective training examples, the actual
+volume the matched-volume test above was a scaled proxy for) makes NCHLT
+slightly worse but ANV meaningfully better (WER 0.256 -> 0.197, a 23%
+relative improvement) - augmentation helps more on the harder domain, the
+same pattern seen throughout this section, now confirmed at the scale that
+was previously only estimated.
+
+Evidence: `notes/pilot-ven-results.md` ("Objective 2" section, its
+"Follow-up run" subsection, and the "True full-scale run" subsection after
+it) - includes the real memory bug (silent OOM kill) hit and fixed while
+running the matched-volume test, and checkpoint-by-checkpoint progressions
+showing *when* augmented models actually improve during training.
 
 ## Sub-question 3: two-stage vs. single-stage fine-tuning
 
@@ -141,32 +162,41 @@ aggregate F1 curve.
 
 ## What's still open
 
+Genuinely open, not something this track can close alone:
+
 - **Objective 7** (cross-language feasibility/transferability) needs
   Setswana and Sepedi results from the rest of the team - this track only
   answers it for Tshivenda, and can't complete it alone.
+
+Deliberate no's, not gaps:
+
 - **XEUS** (ESPnet) - the one architecture candidate with *confirmed*
   native Tshivenda coverage - was identified but never attempted. Not
   actually a hardware blocker on closer look (it runs on CPU/MPS fine) -
   the real cost is that it has no ready CTC fine-tuning wrapper like every
   other model tried here, so using it means building a whole custom
   training pipeline against its raw feature-extraction API from scratch.
-  Logged as a
-  deliberate no, not a failure.
-- **A same-capacity LoRA rank sweep** (16/32, not just 8) - the two-stage
-  LoRA result showed a word-boundary-merge artifact that looks like a
-  rank-8 capacity limit; untested whether a higher rank closes more of the
-  gap to full fine-tuning.
-- **A true full-scale augmented run** (180k effective examples, not the
-  20k->60k matched-volume compromise) - would take an estimated 30+ hours;
-  the matched-volume result is a scaled-down but real proxy for this
-  question, not a substitute for the definitive number.
-- **Statistical confidence on the classifier** - Objective 4's numbers are
-  one 5-fold run on 179 source articles; more seeds would turn the single
-  point estimate into a proper mean +/- std, the same way the report
-  already does for other results.
-- The repo-restructure pass (`src/asr/` grouping 10 files under one flat
-  directory) is planned but not done - purely cosmetic, doesn't affect any
-  result.
+- **Rank-32 LoRA** - not pursued once rank 16's trade-off was
+  characterized (see below) - not worth sinking more time into per Seani's
+  model-selection guidance (try candidates, drop into full runs only where
+  it clearly pays off).
+
+Resolved since this list was first written:
+
+- ~~A same-capacity LoRA rank sweep~~ - **done** at rank 16: NCHLT WER
+  0.295 (vs. rank 8's 0.321), but ANV gets worse (0.840 vs. 0.797) - a real
+  trade-off, not a clean win, see `notes/pilot-ven-results.md` ("Objective
+  3" Run 3).
+- ~~A true full-scale augmented run (180k effective examples)~~ - **done**:
+  NCHLT WER 0.122, ANV WER 0.197 (vs. 0.103/0.256 without augmentation) -
+  see `notes/pilot-ven-results.md` ("True full-scale run").
+- ~~Statistical confidence on the classifier~~ - **done**: 2 more seeds
+  run (7 and 123), mean accuracy across all 3 seeds 0.576, spread about 1.2
+  points - a stable number, not a one-off, see
+  `notes/tshivenda-classifier-proxy.md` ("Confidence check: 2 more seeds").
+- ~~The repo-restructure pass~~ - **done**: `src/asr/`'s 10 flat files are
+  now grouped into `whisper/`, `ctc/`, `eval/`, and `shared/` - purely
+  cosmetic, doesn't affect any result. See `README.md` for the new layout.
 
 ## How to reproduce every headline number
 
@@ -176,16 +206,16 @@ needed for the CTC-loss models (Wav2Vec2 family) on Apple Silicon.
 
 | Result | Command |
 |---|---|
-| Whisper full-scale (WER 0.103) | `python src/asr/pilot_finetune_whisper_mps_ven.py --resume-from results/whisper-ven-pilot-v2/final --include-anv --epochs 1 --learning-rate 5e-5 --train-clips 100000 --eval-clips 500` |
-| Wav2Vec2 full-scale (WER 0.252) | `PYTORCH_ENABLE_MPS_FALLBACK=1 python src/asr/pilot_finetune_wav2vec2_mps_ven.py --resume-from results/wav2vec2-ven-pilot-v2/final --include-anv --epochs 1 --learning-rate 5e-5 --train-clips 100000 --eval-clips 500` |
-| Wav2Vec2 + augmentation (WER 0.269) | `PYTORCH_ENABLE_MPS_FALLBACK=1 python src/asr/pilot_finetune_wav2vec2_mps_ven.py --train-clips 5000 --eval-clips 500 --epochs 3 --augment --spec-augment` |
-| Whisper + augmentation (WER 0.217) | `python src/asr/pilot_finetune_whisper_mps_ven.py --train-clips 5000 --eval-clips 500 --epochs 3 --augment --spec-augment` |
-| Whisper + augmentation, matched volume (WER 0.187) | `python src/asr/pilot_finetune_whisper_mps_ven.py --train-clips 20000 --eval-clips 500 --epochs 1 --include-anv --augment --spec-augment` |
-| Two-stage LoRA Stage 1 (WER 0.517) | `python src/asr/pilot_finetune_whisper_mps_ven.py --train-clips 5000 --eval-clips 500 --epochs 3 --include-anv --lora --learning-rate 3e-4` |
-| Two-stage LoRA Stage 2 (WER 0.360 -> 0.321 standardized) | `python src/asr/pilot_finetune_whisper_mps_ven.py --train-clips 5000 --eval-clips 500 --epochs 3 --lora-adapter-from <stage1_dir>/final --learning-rate 3e-4` |
-| Single-stage LoRA control (WER 0.384) | `python src/asr/pilot_finetune_whisper_mps_ven.py --train-clips 5000 --eval-clips 500 --epochs 3 --lora --learning-rate 3e-4` |
-| Standardized eval on any Whisper/full checkpoint | `python src/asr/zero_shot_baseline_ven.py --model <checkpoint_dir> --limit 200 --seed 42 --save-predictions <out_dir>` |
-| Standardized eval on any Wav2Vec2/CTC checkpoint | `python src/asr/evaluate_wav2vec2_ven.py --checkpoint <checkpoint_dir> --limit 200 --seed 42 --save-predictions <out_dir>` |
+| Whisper full-scale (WER 0.103) | `python src/asr/whisper/pilot_finetune_whisper_mps_ven.py --resume-from results/whisper-ven-pilot-v2/final --include-anv --epochs 1 --learning-rate 5e-5 --train-clips 100000 --eval-clips 500` |
+| Wav2Vec2 full-scale (WER 0.252) | `PYTORCH_ENABLE_MPS_FALLBACK=1 python src/asr/ctc/pilot_finetune_wav2vec2_mps_ven.py --resume-from results/wav2vec2-ven-pilot-v2/final --include-anv --epochs 1 --learning-rate 5e-5 --train-clips 100000 --eval-clips 500` |
+| Wav2Vec2 + augmentation (WER 0.269) | `PYTORCH_ENABLE_MPS_FALLBACK=1 python src/asr/ctc/pilot_finetune_wav2vec2_mps_ven.py --train-clips 5000 --eval-clips 500 --epochs 3 --augment --spec-augment` |
+| Whisper + augmentation (WER 0.217) | `python src/asr/whisper/pilot_finetune_whisper_mps_ven.py --train-clips 5000 --eval-clips 500 --epochs 3 --augment --spec-augment` |
+| Whisper + augmentation, matched volume (WER 0.187) | `python src/asr/whisper/pilot_finetune_whisper_mps_ven.py --train-clips 20000 --eval-clips 500 --epochs 1 --include-anv --augment --spec-augment` |
+| Two-stage LoRA Stage 1 (WER 0.517) | `python src/asr/whisper/pilot_finetune_whisper_mps_ven.py --train-clips 5000 --eval-clips 500 --epochs 3 --include-anv --lora --learning-rate 3e-4` |
+| Two-stage LoRA Stage 2 (WER 0.360 -> 0.321 standardized) | `python src/asr/whisper/pilot_finetune_whisper_mps_ven.py --train-clips 5000 --eval-clips 500 --epochs 3 --lora-adapter-from <stage1_dir>/final --learning-rate 3e-4` |
+| Single-stage LoRA control (WER 0.384) | `python src/asr/whisper/pilot_finetune_whisper_mps_ven.py --train-clips 5000 --eval-clips 500 --epochs 3 --lora --learning-rate 3e-4` |
+| Standardized eval on any Whisper/full checkpoint | `python src/asr/eval/zero_shot_baseline_ven.py --model <checkpoint_dir> --limit 200 --seed 42 --save-predictions <out_dir>` |
+| Standardized eval on any Wav2Vec2/CTC checkpoint | `python src/asr/eval/evaluate_wav2vec2_ven.py --checkpoint <checkpoint_dir> --limit 200 --seed 42 --save-predictions <out_dir>` |
 | Classifier, AfroXLM-RoBERTa (0.562 acc / 0.550 F1) | `python src/classification/train_classifier_ven.py --model Davlan/afro-xlmr-base --folds 5 --epochs 15 --learning-rate 1e-3 --freeze-base` |
 | Error-propagation degradation study | `python src/error_propagation/run_degradation_study_ven.py --error-model results/preds_full/final_nchlt_test.csv results/preds_full/final_anv_dev_test.csv` |
 

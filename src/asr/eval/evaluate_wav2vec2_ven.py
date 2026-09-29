@@ -25,7 +25,7 @@ from transformers import AutoModelForCTC, Wav2Vec2Processor
 
 import sys
 sys.path.insert(0, str(Path(__file__).resolve().parent))       # sibling: zero_shot_baseline.py
-sys.path.insert(0, str(Path(__file__).resolve().parents[1]))   # src/: text_norm.py
+sys.path.insert(0, str(Path(__file__).resolve().parents[2]))   # src/: text_norm.py
 from text_norm_ven import normalize_transcript
 from zero_shot_baseline_ven import EVAL_SETS, pick_device
 

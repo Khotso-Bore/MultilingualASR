@@ -40,10 +40,10 @@ from transformers import (
 )
 
 import sys
-sys.path.insert(0, str(Path(__file__).resolve().parent))
+sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "shared"))
 from audio_augment_ven import SPEED_RATES, speed_perturb
 
-REPO_ROOT = Path(__file__).resolve().parents[2]
+REPO_ROOT = Path(__file__).resolve().parents[3]
 DATA = REPO_ROOT / "dataset" / "processed"
 OUTPUT_DIR = REPO_ROOT / "results" / "whisper-ven-pilot"
 PLACEHOLDER_LANGUAGE = "sw"  # Swahili token as a Tshivenda placeholder - see module docstring
