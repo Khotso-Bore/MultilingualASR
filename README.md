@@ -30,16 +30,20 @@ src/                          # reusable pipeline code, grouped by stage
   text_norm_ven.py                   # shared Tshivenda text normalisation - used across every stage below
   preprocessing/                 # NCHLT/ANV -> processed CSVs, CTC tokenizer
   asr/                            # ASR fine-tuning, evaluation, and shared augmentation
-    audio_augment_ven.py               # speed perturbation (Objective 2) - numpy-only, no extra audio dependency
-    pilot_finetune_whisper_mps_ven.py  # Whisper - the working flagship model; also handles LoRA/two-stage (Objective 3)
-    pilot_finetune_wav2vec2_mps_ven.py # Wav2Vec2 - the working non-Whisper model; --model swaps to any other checkpoint (e.g. XLSR-53)
-    pilot_finetune_hubert_mps_ven.py   # AfriHuBERT / SSA-HuBERT - both collapsed, kept for the debugging record
-    pilot_finetune_mms_mps_ven.py      # collapsed
-    pilot_finetune_w2vbert_mps_ven.py  # collapsed
-    pilot_finetune_data2vec_mps_ven.py # collapsed
-    pilot_finetune_unispeech_mps_ven.py # the second working non-Whisper model
-    zero_shot_baseline_ven.py          # zero-shot Whisper baseline AND the standardized eval used for every final checkpoint
-    evaluate_wav2vec2_ven.py           # standardized eval for any CTC checkpoint (despite the filename)
+    whisper/                          # the working flagship architecture
+      pilot_finetune_whisper_mps_ven.py  # also handles LoRA/two-stage (Objective 3)
+    ctc/                               # every CTC-family model tried, working and collapsed alike
+      pilot_finetune_wav2vec2_mps_ven.py  # the working non-Whisper model; --model swaps to any other checkpoint (e.g. XLSR-53)
+      pilot_finetune_unispeech_mps_ven.py # the second working non-Whisper model
+      pilot_finetune_hubert_mps_ven.py    # AfriHuBERT / SSA-HuBERT - both collapsed, kept for the debugging record
+      pilot_finetune_mms_mps_ven.py       # collapsed
+      pilot_finetune_w2vbert_mps_ven.py   # collapsed
+      pilot_finetune_data2vec_mps_ven.py  # collapsed
+    eval/                              # standardized evaluation, shared across every model above
+      zero_shot_baseline_ven.py          # zero-shot Whisper baseline AND the standardized eval used for every final Whisper checkpoint
+      evaluate_wav2vec2_ven.py           # standardized eval for any CTC checkpoint (despite the filename) - imports EVAL_SETS from its sibling above
+    shared/                            # used by more than one architecture
+      audio_augment_ven.py               # speed perturbation (Objective 2) - numpy-only, no extra audio dependency; imported by both whisper/ and ctc/'s wav2vec2 script
   classification/                # misinformation-classifier proxy dataset + training
   error_propagation/             # controlled-WER transcript corruption + the degradation study (§4.6, Objectives 5/6)
     corrupt_transcripts_ven.py         # the corruption engine + measured error-model support
@@ -54,7 +58,7 @@ notebooks/                    # thin wrappers around src/ for local iteration, p
   notebook.ipynb                 # pre-language-split streaming-sample EDA
   za_next_voices_eda.ipynb       # pre-language-split fuller EDA + plots
   finetune_wav2vec2.ipynb        # Khotso's generic Setswana smoke-test template
-  preprocessing/ asr/ classification/ error_propagation/   # mirrors src/ above
+  preprocessing/ asr/ classification/ error_propagation/   # mirrors src/ above, though notebooks/asr/ stays flat rather than mirroring src/asr/'s whisper/ctc/eval/shared split
 
 tokenizers/ven/                # committed custom CTC tokenizer (Tshivenda's 32-character set)
 
@@ -76,11 +80,7 @@ README.md
 ```
 
 No dedicated `configs/` or `tests/` folder yet - add them the same way, alongside
-what already exists rather than restructuring around them. A pass to
-physically group these files into `src/asr/`, `src/preprocessing/` etc.
-subfolders more finely (they're already grouped by top-level stage above,
-but `src/asr/` itself has grown to 10 files) is planned but not yet done -
-see the open items in `notes/conclusions.md`.
+what already exists rather than restructuring around them.
 
 ## Setup
 

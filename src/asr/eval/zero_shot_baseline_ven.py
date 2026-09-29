@@ -34,10 +34,10 @@ from jiwer import cer, process_words
 from transformers import pipeline
 
 import sys
-sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
+sys.path.insert(0, str(Path(__file__).resolve().parents[2]))
 from text_norm_ven import normalize_transcript
 
-REPO_ROOT = Path(__file__).resolve().parents[2]
+REPO_ROOT = Path(__file__).resolve().parents[3]
 
 EVAL_SETS = {
     "nchlt_test": REPO_ROOT / "dataset" / "processed" / "nchlt_ven" / "test.csv",

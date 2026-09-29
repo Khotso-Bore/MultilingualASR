@@ -47,10 +47,7 @@ from transformers import (
     Wav2Vec2CTCTokenizer,
 )
 
-import sys
-sys.path.insert(0, str(Path(__file__).resolve().parent))
-
-REPO_ROOT = Path(__file__).resolve().parents[2]
+REPO_ROOT = Path(__file__).resolve().parents[3]
 DATA = REPO_ROOT / "dataset" / "processed"
 TOKENIZER_DIR = REPO_ROOT / "tokenizers" / "ven"
 OUTPUT_DIR = REPO_ROOT / "results" / "w2vbert-ven-pilot"

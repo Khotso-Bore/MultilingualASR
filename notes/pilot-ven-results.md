@@ -52,7 +52,7 @@ same sets throughout):
 
 ## Whisper full-scale (final) - best ASR result overall, answers Objective 1
 
-`src/asr/pilot_finetune_whisper_mps_ven.py --resume-from results/whisper-ven-pilot-v2/final
+`src/asr/whisper/pilot_finetune_whisper_mps_ven.py --resume-from results/whisper-ven-pilot-v2/final
 --include-anv --epochs 1 --learning-rate 5e-5 --train-clips 100000 --eval-clips 500`,
 resumed from pilot v2 (0.182/0.048), full NCHLT+ANV train pool (60,087 raw
 clips), 1 epoch, M4 MacBook (MPS), 11h21m34s training (~12.5h total with
@@ -272,7 +272,7 @@ solid.
 
 ## Objective 2: data augmentation (SpecAugment + speed perturbation)
 
-Implemented in `src/asr/audio_augment_ven.py` (speed perturbation, numpy-only)
+Implemented in `src/asr/shared/audio_augment_ven.py` (speed perturbation, numpy-only)
 and enabled via `--augment`/`--spec-augment` flags added to both pilot
 scripts. Speed perturbation adds 0.9x/1.1x resampled copies of every
 training clip (3x the training data, matching Biswas et al. 2022's method);
@@ -995,7 +995,7 @@ sample, never the whole story.
 
 ## Whisper pilot v2 (rescoped) - best pilot-scale result
 
-`src/asr/pilot_finetune_whisper_mps_ven.py --resume-from results/whisper-ven-pilot/final
+`src/asr/whisper/pilot_finetune_whisper_mps_ven.py --resume-from results/whisper-ven-pilot/final
 --include-anv --epochs 5 --learning-rate 5e-5 --train-clips 12000 --eval-clips 500`,
 resumed from pilot v1's weights, 12,000 raw train clips (NCHLT + ANV, 7,325 kept
 after the 10s cap), 500 raw eval clips (430 kept), 5 epochs, M4 MacBook (MPS),
@@ -1028,7 +1028,7 @@ using the same scale of extra data (~7,300 clips) that took Wav2Vec2 from
 
 ## Whisper pilot v1 - works cleanly, best result so far
 
-`src/asr/pilot_finetune_whisper_mps_ven.py`, whisper-small, 5,000 NCHLT train clips
+`src/asr/whisper/pilot_finetune_whisper_mps_ven.py`, whisper-small, 5,000 NCHLT train clips
 (<= 10 s cap, 4,974 kept), 493 eval clips, 3 epochs, M4 MacBook (MPS).
 Placeholder language token "sw" (Swahili) used since Whisper has no `<|ven|>`
 token - see the module docstring for the reasoning. NOT the real Stage 1
@@ -1125,7 +1125,7 @@ despite not being specifically labeled with Venda either - the recipe is
 not "the checkpoint already knows the language." Same logic applies to
 Whisper, which has no `<|ven|>` token at all.
 
-`src/asr/pilot_finetune_mms_mps_ven.py` is a near line-for-line copy of
+`src/asr/ctc/pilot_finetune_mms_mps_ven.py` is a near line-for-line copy of
 `pilot_finetune_wav2vec2_mps_ven.py` with the base checkpoint swapped -
 same tokenizer, collator, and training loop. Verified it loads and trains
 end-to-end with a 5-clip/1-epoch smoke test (`Wav2Vec2ForCTC LOAD REPORT`
@@ -1238,7 +1238,7 @@ Architecturally further from our existing scripts than MMS was: loads via
 `input_features` via `SeamlessM4TFeatureExtractor` rather than raw-waveform
 `input_values` via `Wav2Vec2FeatureExtractor` - closer to the Whisper pilot
 script's data-prep pattern than the Wav2Vec2/MMS one. Still reuses the
-existing `tokenizers/ven/` CTC tokenizer unchanged. `src/asr/pilot_finetune_w2vbert_mps_ven.py`
+existing `tokenizers/ven/` CTC tokenizer unchanged. `src/asr/ctc/pilot_finetune_w2vbert_mps_ven.py`
 built from this hybrid pattern; two real bugs caught and fixed via a
 5-clip/1-epoch smoke test before trusting it:
 
@@ -1307,7 +1307,7 @@ way.
 
 Reuses raw-waveform `Wav2Vec2FeatureExtractor` + the existing
 `tokenizers/ven/` tokenizer, unlike w2v-BERT's log-mel setup - closer to
-the XLS-R/MMS pattern. `src/asr/pilot_finetune_data2vec_mps_ven.py` smoke-tested
+the XLS-R/MMS pattern. `src/asr/ctc/pilot_finetune_data2vec_mps_ven.py` smoke-tested
 clean on the first try (model loads with only `lm_head` MISSING, same
 clean-load pattern as w2v-BERT; `freeze_feature_encoder()` works here,
 unlike w2v-BERT, since data2vec-audio does have a raw-waveform CNN feature
@@ -1483,7 +1483,7 @@ though not a like-for-like comparison (different eval set, full-scale
 training vs. our laptop-scale pilots).
 
 **Could not evaluate it - the published repo is broken.** Attempted to
-load it via `src/asr/zero_shot_baseline_ven.py` (which accepts any HF
+load it via `src/asr/eval/zero_shot_baseline_ven.py` (which accepts any HF
 model id); failed with a tokenizer construction error. Investigated
 directly: the repo's `vocab.json` is 746 bytes - nowhere near a real
 ~50k-token Whisper vocabulary - and `merges.txt`/`tokenizer.json` are
@@ -1593,5 +1593,5 @@ From 400 saved ref/hyp pairs (results/preds_pilot/, gitignored):
 - Pilot only: small subset, short-clip cap, single corpus, few epochs.
 - Deletion-heavy ratio partly reflects degenerate merged-word output on long
   ANV clips; re-measure after Stage 1.
-- Regenerate predictions: src/asr/evaluate_wav2vec2_ven.py --checkpoint
+- Regenerate predictions: src/asr/eval/evaluate_wav2vec2_ven.py --checkpoint
   results/wav2vec2-ven-pilot/final --save-predictions results/preds_pilot

@@ -7,7 +7,7 @@ run, gets folded into the pilot notes once it finishes.
 
 ## Config
 
-- Script: `src/asr/pilot_finetune_whisper_mps_ven.py`
+- Script: `src/asr/whisper/pilot_finetune_whisper_mps_ven.py`
 - Resumed from: `results/whisper-ven-pilot-v2/final` (best pilot so far, WER 0.182 / CER 0.048)
 - Data: full NCHLT + ANV train pool (`--train-clips 100000`, clamped to the
   actual pool size - 60,087 raw clips, ~36,600 expected after the 10s MPS
