@@ -7,39 +7,31 @@ real reference-vs-hypothesis examples, the checkpoint-by-checkpoint training
 progressions, or the raw run logs, follow the links - they're not
 duplicated here on purpose, so this stays readable in one sitting.
 
-## Main Research Question
+
+## The research question
 
 *How can data augmentation and fine-tuning techniques improve ASR
 performance for Setswana, Sepedi, and Tshivenda, and how do the resulting
 transcription errors propagate into downstream misinformation
 classification inaccuracies?*
 
-**For Tshivenda**: fine-tuning takes Whisper from an unusable zero-shot
-WER of 1.108 down to 0.103 at full scale - a real, large improvement.
-Targeted augmentation (SpecAugment + speed perturbation) adds a further,
-measurable gain on top, more so for weaker models than strong ones. A
-two-stage fine-tuning strategy, properly isolated from confounds, also
-helps. And the resulting transcription quality is good enough to keep a
-downstream misinformation classifier reliable, as long as ASR error rate
-stays below roughly 25-30% WER - a threshold this project both establishes
-and confirms Whisper's Tshivenda transcriptions comfortably (NCHLT) or
-narrowly (ANV) sit inside.
+## Data
 
-This is a complete, evidenced answer for Tshivenda. It is not an answer for
-Setswana or Sepedi - see "What's still open" below.
+Two kinds of data, on purpose.
 
-**Does an actual pipeline exist, audio in, verdict out?** Yes, as of this
-section - `src/demo/`. Real audio flows through the fine-tuned Whisper
-checkpoint, the transcript flows into the misinformation classifier, and a
-real verdict with a confidence score comes out. Run at real volume (1,000
-real clips, not one curated example): see `notes/tshivenda-demo-pipeline.md`
-for the full writeup, including a real robustness finding (occasional
-runaway/repetition-loop generation on longer clips) that a small fixed
-evaluation set had never surfaced. One honest limit stays true throughout:
-there is no audio of the actual real/fake misinformation content the
-classifier was trained on, so a verdict on a transcribed speech clip is real
-but has no ground truth to score it against - the 0.562 accuracy number
-still comes only from the text-only proxy dataset.
+**Speech (for the ASR part):** NCHLT (read speech, 49,744 clips: train 30,982 / val 10,616 / test 8,146) and ANV / Swivuriso (spontaneous speech, 32,322 clips: train 29,105 / dev 2,022 / test 1,195). The training parts were combined into one pool of 60,087 clips. Read and spontaneous speech differ enough that training on one alone would hurt the other, so both are used.
+
+**Text (for the misinformation part):** Vukuzenzele government news, 179 real articles, with 179 synthetic fakes built by changing numbers, dates and names (see `notes/tshivenda-classifier-proxy.md`). The classifier reads words, not audio, so the speech model's transcripts are what it gets to judge. The fake/real classes are balanced 50/50, and a real article and its fake are always kept on the same side of any train/test split.
+
+**Not yet checked:** speaker balance (speaker count, gender, age) and clip duration per corpus on the speech side, and whether any speaker appears in both train and test. These are the next checks to run before claiming the speech data is balanced.
+
+## Tokenizer and training setup
+
+- **Tokenizer:** a character-level CTC vocabulary built from the train sets of both corpora. The transcripts use 32 characters: a-z, space, and the five Tshivenda diacritic letters (ḓ ḽ ṅ ṋ ṱ). Space becomes the word delimiter, plus `[UNK]` and `[PAD]`. It's committed in `tokenizers/ven/` so every model in the team uses the identical vocabulary, otherwise WER numbers aren't comparable.
+- **Whisper:** has its own tokenizer and no Tshivenda language token, so a placeholder language code (`sw`, Swahili, the closest Bantu language Whisper supports) is used, and the model adapts it during fine-tuning.
+- **Hardware:** everything ran locally on an M4 Mac using PyTorch's MPS backend. Colab and Kaggle were tried and dropped as too much friction (`notes/whisper-full-scale-run-log.md`).
+- **Fine-tuning settings:** full fine-tune at learning rate 5e-5. LoRA at 3e-4, because LoRA adapters need a much higher learning rate than full fine-tuning. The full-scale Whisper run started from the pilot-v2 checkpoint and trained for one epoch over the 60k pool.
+- **Classifier:** AfroXLM-RoBERTa with the base frozen (only the classification head trains), learning rate 1e-3, up to 15 epochs with early stopping, evaluated with 5-fold grouped cross-validation.
 
 ## Sub-question 1: baseline WER/CER for fine-tuned Wav2Vec2 and Whisper
 
@@ -160,6 +152,21 @@ transcript examples at each WER level (e.g. a government minister's
 surname being overwritten by filler text by WER 0.5), not just the
 aggregate F1 curve.
 
+## The real pipeline
+
+**Does an actual pipeline exist, audio in, verdict out?** Yes, as of this
+section - `src/demo/`. Real audio flows through the fine-tuned Whisper
+checkpoint, the transcript flows into the misinformation classifier, and a
+real verdict with a confidence score comes out. Run at real volume (1,000
+real clips, not one curated example): see `notes/tshivenda-demo-pipeline.md`
+for the full writeup, including a real robustness finding (occasional
+runaway/repetition-loop generation on longer clips) that a small fixed
+evaluation set had never surfaced. One honest limit stays true throughout:
+there is no audio of the actual real/fake misinformation content the
+classifier was trained on, so a verdict on a transcribed speech clip is real
+but has no ground truth to score it against - the 0.562 accuracy number
+still comes only from the text-only proxy dataset.
+
 ## What's still open
 
 Genuinely open, not something this track can close alone:
@@ -197,6 +204,29 @@ Resolved since this list was first written:
 - ~~The repo-restructure pass~~ - **done**: `src/asr/`'s 10 flat files are
   now grouped into `whisper/`, `ctc/`, `eval/`, and `shared/` - purely
   cosmetic, doesn't affect any result. See `README.md` for the new layout.
+## Back to the research question
+
+**For Tshivenda**: fine-tuning takes Whisper from an unusable zero-shot
+WER of 1.108 down to 0.103 at full scale - a real, large improvement.
+Targeted augmentation (SpecAugment + speed perturbation) adds a further,
+measurable gain on top, more so for weaker models than strong ones. A
+two-stage fine-tuning strategy, properly isolated from confounds, also
+helps. And the resulting transcription quality is good enough to keep a
+downstream misinformation classifier reliable, as long as ASR error rate
+stays below roughly 25-30% WER - a threshold this project both establishes
+and confirms Whisper's Tshivenda transcriptions comfortably (NCHLT) or
+narrowly (ANV) sit inside.
+
+This is a complete, evidenced answer for Tshivenda. It is not an answer for
+Setswana or Sepedi - see "What's still open" below.
+
+## The five sub-questions at a glance
+
+1. **Baseline WER:** Whisper clearly beats Wav2Vec2 (10.3% vs. 25.2%). See Sub-question 1.
+2. **Does augmentation help?** Yes, every time, but the gain shrinks on stronger models and doesn't replace real data. See Sub-question 2.
+3. **Two-stage vs. single-stage:** two-stage wins once capacity is held constant (32.1% vs. 38.4%). See Sub-question 3.
+4. **Classifier vs. text-only baseline:** AfroXLM-RoBERTa 56.2% vs. XLM-RoBERTa at chance. See Sub-question 4.
+5. **Which errors hurt most?** Insertions, by far. Reliability holds below roughly 25-30% WER. See Sub-question 5.
 
 ## How to reproduce every headline number
 
